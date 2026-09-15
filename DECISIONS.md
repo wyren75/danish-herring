@@ -28,3 +28,20 @@ At zoom 11 on a typical desktop the site (0.22° of latitude) is taller than
 the map, so its north tip and the boundary label were off-screen on load.
 Zoom 10.3 shows the whole site and the label with a little margin. Centre
 unchanged at 10.55, 57.46.
+
+## 2026-09-15 · M3 · Catalogue queries test footprint coverage of the site, not intersection with the box
+
+Five of the twelve ingested scenes (01 Apr, 01 May, 26 May, 12 Jun, 24 Jun,
+all ~17:09 UTC, one orbit track) never imaged the site: their footprint's
+eastern edge lies at about lon 10.35 at the site's latitude, clipping only
+the western sliver of the padded box over the mainland. They passed a
+box-intersection test. Fixed on the data side in `ingest.py` and
+`ingest_passes.py`: a candidate product must cover the site polygon. The
+two-minute WMS window behaved correctly throughout — for 26 May it refused
+the morning pass that a whole-day query would have shown.
+
+## 2026-09-15 · M3 · Radar layer stays IW_VV
+
+Compared `IW_VV` and `IW_VV_DB` by eye as section 6.2 suggests. Kept
+`IW_VV`: near-black sea and saturated hulls read better for the click-blind
+use of the app. `IW_VV_DB` remains available by changing one value in `.env`.
