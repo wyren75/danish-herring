@@ -161,10 +161,69 @@ body {
   font-size: 12px;
 }
 
+/* Layer toggles (section 7) */
+
+.layers {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.layer-toggle input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
 .map-area {
   grid-area: map;
   position: relative;
   min-height: 0;
+}
+
+/* Thin indeterminate bar along the top of the map while radar tiles load
+   (section 14). */
+.loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.loading-bar--on {
+  opacity: 1;
+}
+
+.loading-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  background: var(--accent);
+  animation: loading-slide 1.2s linear infinite;
+}
+
+@keyframes loading-slide {
+  from {
+    left: -30%;
+  }
+  to {
+    left: 100%;
+  }
 }
 
 /* Explicit size rather than absolute positioning: maplibre-gl.css sets

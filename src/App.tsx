@@ -11,6 +11,7 @@ import {
 import type { SiteGeometry } from './lib/geo'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
+import Layers from './panel/Layers'
 import ScenePicker, { rankScenes } from './panel/ScenePicker'
 
 export const APP_NAME = 'Danish Herring'
@@ -26,6 +27,8 @@ export default function App() {
   const [data, setData] = useState<Data | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // Layer 3 is on by default (section 7 table).
+  const [showRadar, setShowRadar] = useState(true)
 
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
   useEffect(() => {
@@ -77,14 +80,17 @@ export default function App() {
             Could not load data: {loadError}
           </p>
         ) : data ? (
-          <ScenePicker
-            scenes={data.scenes}
-            snapshots={data.snapshots}
-            vessels={data.vessels}
-            site={data.site}
-            selectedId={selectedId}
-            onSelect={selectScene}
-          />
+          <>
+            <ScenePicker
+              scenes={data.scenes}
+              snapshots={data.snapshots}
+              vessels={data.vessels}
+              site={data.site}
+              selectedId={selectedId}
+              onSelect={selectScene}
+            />
+            <Layers showRadar={showRadar} onShowRadar={setShowRadar} />
+          </>
         ) : (
           <>
             <h2>Scenes</h2>
@@ -93,7 +99,7 @@ export default function App() {
         )}
       </aside>
       <main className="map-area">
-        <MapView />
+        <MapView scene={scene} showRadar={showRadar} />
       </main>
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·

@@ -46,6 +46,9 @@ export const COLORS = {
 // (section 7 table: basemap → S2 → S1 → site → GFW → AIS → click marker).
 // Everything of ours goes on top of the basemap style's own layers.
 export const IDS = {
+  s1: 's1',
   site: 'site',
   siteLabel: 'site-label',
 }
+
+export const S1_ATTRIBUTION = 'Contains modified Copernicus Sentinel data'
