@@ -82,6 +82,85 @@ body {
   color: var(--muted);
 }
 
+.error {
+  color: var(--accent);
+}
+
+/* Scene picker (section 8) */
+
+.scene-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.scene {
+  display: block;
+  width: 100%;
+  margin: 0 0 2px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scene:hover {
+  background: var(--bg);
+}
+
+.scene:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.scene--active {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.scene-when,
+.scene-counts {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scene-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-counts {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.scene-dots {
+  color: var(--accent);
+  letter-spacing: 0.1em;
+}
+
+.scene-detail {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.scene-product {
+  display: block;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 10px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.scene-detail p {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
 .map-area {
   grid-area: map;
   position: relative;
