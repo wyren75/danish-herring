@@ -27,8 +27,10 @@ export const SITE_LABEL = 'Natura 2000 · DK00FX113 · Hirsholmene'
 // ---------------------------------------------------------------------------
 // View (section 7): centre, zoom, zoom range, and pan limits ≈ box + 30 km.
 // At 57.5° N, 30 km ≈ 0.27° latitude ≈ 0.50° longitude.
+// Zoom 10.3 rather than the spec's 11: the site is ~0.22° tall and at z11
+// its north tip and label fell off an ~830 px map (decided 15 Sept 2026).
 // ---------------------------------------------------------------------------
-export const INITIAL_VIEW = { center: [10.55, 57.46] as [number, number], zoom: 11 }
+export const INITIAL_VIEW = { center: [10.55, 57.46] as [number, number], zoom: 10.3 }
 export const ZOOM = { min: 9, max: 14 }
 export const MAX_BOUNDS: [[number, number], [number, number]] = [
   [BOX.w - 0.5, BOX.s - 0.27],
