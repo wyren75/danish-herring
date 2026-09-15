@@ -269,11 +269,14 @@ All produced by scripts in this repository and loaded into Supabase. The app
 
 ### 5.1 Tables
 
-`scenes` — one per Sentinel-1 acquisition
+`scenes` — one per Sentinel-1 acquisition, footprint-verified to cover the site
 ```
 scene_id, product_name, acq_start, acq_end, acq_mid, site_code,
-bbox_w, bbox_s, bbox_e, bbox_n, n_positions, n_vessels
+bbox_w, bbox_s, bbox_e, bbox_n, n_positions, n_vessels,
+n_in_site, n_fishing_in_site, n_trawling_in_site
 ```
+The last three are counted inside the **site polygon** at the acquisition
+instant. `n_vessels` is the padded box and includes the harbour.
 
 `vessels` — one per MMSI ever seen
 ```
@@ -371,15 +374,20 @@ This is the one credential not yet created. Steps:
 Instance IDs are intended for client-side use. The risk of exposure is
 someone consuming your free quota, not your money. Rotate if that happens.
 
-### 6.3 Basemap tiles — owner's choice, one URL string
+### 6.3 Basemap — owner's choice, one URL string
 
-Default in code: Carto Dark Matter, because bright radar returns read best on
-a dark neutral base.
+Default in code (decided at M1, 15 Sept): **OpenFreeMap dark style**, a
+vector style served free with no key or account. Bright radar returns read
+best on a dark neutral base.
 
 ```
-https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
-attribution: © OpenStreetMap contributors © CARTO
+style: https://tiles.openfreemap.org/styles/dark
+attribution: © OpenFreeMap © OpenMapTiles · Data from OpenStreetMap
 ```
+(That is the wording OpenFreeMap asks for; the provider's own request wins.)
+
+Carto Dark Matter was the original default; it began requiring an API key in
+September 2026 and was replaced rather than adding a sixth credential.
 
 Alternative, if the owner prefers:
 ```
@@ -472,21 +480,25 @@ subject.
 
 ## 8. Scene picker
 
-Left panel, top. One row per scene from `scenes`, joined client-side with
-`snapshots` and `vessels` to compute a fishing count. **Count only fishing
-vessels whose snapshot falls inside the site polygon**, not the padded box —
-the box includes Frederikshavn harbour, and counting it would make every
-scene look equally busy (70–125 vessels) when the site itself holds 10–30.
+Left panel, top. One row per scene from `scenes`. **Since 15 September the
+counts are precomputed at ingestion** — `n_in_site`, `n_fishing_in_site`,
+`n_trawling_in_site` — from the Danish data at the acquisition instant,
+inside the site polygon. Read them; do not recompute client-side. Sort by
+`n_fishing_in_site` descending, ties by `n_trawling_in_site`, then date.
+
+Every scene in the table now has radar over the site (footprint-verified)
+and at least three fishing vessels inside the boundary at the instant.
+Fourteen scenes, 13 August – 8 September 2026. The row format:
 
 ```
-26 May 2026  05:32 UTC   20 vessels · 14 fishing   ●●●●
-11 Aug 2026  17:10 UTC   28 vessels · 15 fishing   ●●●●
-01 Apr 2026  05:41 UTC   11 vessels ·  3 fishing   ●
+02 Sep 2026  05:31 UTC   6 fishing inside · 4 trawling   ●●●●
+01 Sep 2026  05:40 UTC   5 fishing inside · 4 trawling   ●●●●
+31 Aug 2026  17:01 UTC   7 fishing inside · 0 trawling   ●●●
 ```
 
-**Sort by fishing count descending, not by date.** Activity varies day to
-day, and the first scene the user sees should be a busy one. Selecting a
-scene: rebuild the S1 source, load its snapshots, clear any click state.
+Activity varies day to day, and the first scene the user sees should be a
+busy one. Selecting a scene: rebuild the S1 source, load its snapshots,
+clear any click state.
 
 Show beside the list: the scene's product name (small, monospace), and a
 one-line note *"Radar acquired at 05:32:14 UTC. AIS interpolated to this
@@ -634,8 +646,10 @@ for N in 1..10:
 Hourly resolution over a year is 8,760 windows × ~400 passes — trivial in the
 browser. Precompute all ten N on load.
 
-Expected shape, from measurements already made: Hirsholmene ≈ 0% unseen by
-N=4; Bijagós still ≈ 30–40% unseen at N=4. That contrast is the argument.
+Measured, footprint-verified, trailing 365 days (15 Sept 2026): Hirsholmene
+**209** Sentinel-1 passes (one every ~1.7 days); Bijagós core **31** (one
+every ~12 days). Expected shape: Hirsholmene ≈ 0% unseen by N=4; Bijagós
+still well above 50% unseen at N=4. That contrast is the argument.
 
 ### 11.3 The sentence under the chart — fixed copy
 
@@ -778,9 +792,11 @@ sonar/
 3. **What it does** — section 1 of this spec, condensed.
 4. **Try it** — the live URL, and "pick the 26 May scene, click the bright
    dot at the north end of the site".
-5. **What the data says** — measured facts only: 317 radar passes a year
-   over Hirsholmene versus 90 over the Bijagós; 15 fishing vessels inside a
-   95 km² protected site on a single day; **293 apparent-fishing events by
+5. **What the data says** — measured facts only: **209 radar passes a year
+   over Hirsholmene versus 31 over the core of the Bijagós**, same test,
+   same size of target; 15 fishing vessels inside a 95 km² protected site on
+   a single day; 6 fishing vessels inside the site at the instant of the
+   2 September pass, 4 of them at trawling speed; **293 apparent-fishing events by
    45 vessels inside the site in 18 months, every one tagged by Global
    Fishing Watch as inside a marine protected area, 94% Danish-flagged**;
    the AIS coverage figure.
