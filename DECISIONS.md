@@ -208,3 +208,41 @@ Section 14's thin bar was tied to the radar source alone. Sentinel-2 tiles
 come from the same WMS at the same speed, so the bar now shows while
 either source has tiles in flight. Nothing is requested from the S2 layer
 until the toggle is ticked; a hidden layer loads no tiles.
+
+## 2026-09-16 · M8 · The "trailing 365 days" end at the latest pass in the table, not at the clock
+
+Section 11 says trailing 365 days. Anchoring that to `Date.now()` would
+make the headline numbers fall as the ingestion ages — 209 today, 180 in
+a few months, with nothing on screen to say why — and section 14 forbids
+time-of-day behaviour. The year is the 365 days ending at the latest
+`acq_start` in `satellite_passes` (15 Sept 2026 11:21 UTC), and the range
+is printed under the slider. Rerunning `ingest_passes.py` moves it.
+
+## 2026-09-16 · M8 · Only windows wholly inside the year count
+
+Section 11.2 has a window starting on every hour of the year. A window
+starting in the last N days runs past the end of the data, where there are
+no passes because the table stops, not because the satellite did — at
+N = 4 that alone would put Hirsholmene at 0.5 % unseen instead of what the
+passes say. Windows are `[h, h + N days)` with `h + N days ≤ end`: 8,665 of
+them at N = 4, 8,521 at N = 10.
+
+## 2026-09-16 · M8 · Measured, not the spec's expectation: Hirsholmene is 9 % unseen at N = 4
+
+Section 11.2 expected ≈ 0 % by N = 4. The footprint-verified passes give
+59 / 42 / 26 / **9** / 0 % for N = 1–5: the longest gap in the year is
+5.0 days, so a four-day trip can still slip through; a five-day one cannot.
+Bijagós reads 92 / 83 / 74 / **66** / 58 %, longest gap 12.0 days. The
+contrast the section asks for is there; the number is the data's.
+
+## 2026-09-16 · M8 · The Observation tab overlays the map, which stays mounted
+
+Switching tabs must not throw away the radar tiles, the selected scene or
+an open verdict. The tab is a full-width section drawn over the panel and
+map (both stay in the DOM), so coming back is instant and costs no WMS
+requests. The slider opens at N = 4, the milestone's own test case.
+
+## 2026-09-16 · M8 · `bijagos.geojson` is read at startup with `site.geojson`
+
+One more 300-byte fetch alongside the others, rather than a loader inside
+the tab. It is used only for the inset (section 5.2).

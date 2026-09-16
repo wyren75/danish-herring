@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  loadBijagos,
   loadGfwEvents,
   loadPasses,
   loadScenes,
@@ -20,6 +21,7 @@ import { aisFeatures, EMPTY_AIS } from './map/ais'
 import { EMPTY_GFW, gfwFeatures } from './map/gfw'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
+import Observation from './observation/Observation'
 import Layers from './panel/Layers'
 import Radius from './panel/Radius'
 import SceneCounts from './panel/SceneCounts'
@@ -35,13 +37,18 @@ interface Data {
   events: GfwEvent[]
   passes: SatellitePass[]
   site: SiteGeometry
+  bijagos: SiteGeometry
 }
+
+// Two tabs are a useState (section 4).
+type Tab = 'map' | 'observation'
 
 const NO_S2: S2Pick = { pass: null, best: null }
 
 export default function App() {
   const [data, setData] = useState<Data | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [tab, setTab] = useState<Tab>('map')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Layer 3 is on by default (section 7 table).
   const [showRadar, setShowRadar] = useState(true)
@@ -67,11 +74,12 @@ export default function App() {
       loadGfwEvents(),
       loadPasses(),
       loadSite(),
+      loadBijagos(),
     ])
-      .then(([scenes, snapshots, vesselRows, events, passes, site]) => {
+      .then(([scenes, snapshots, vesselRows, events, passes, site, bijagos]) => {
         if (cancelled) return
         const vessels = new Map(vesselRows.map((v) => [v.mmsi, v]))
-        setData({ scenes, snapshots, vessels, events, passes, site })
+        setData({ scenes, snapshots, vessels, events, passes, site, bijagos })
         // Open on the busiest scene so the map is never empty.
         setSelectedId(rankScenes(scenes)[0]?.scene_id ?? null)
       })
@@ -143,6 +151,19 @@ export default function App() {
       <header className="header">
         <span className="brand">{APP_NAME}</span>
         <span className="subtitle">Hirsholmene · Kattegat</span>
+        <nav className="tabs" aria-label="Tabs">
+          {(['map', 'observation'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`tab${tab === t ? ' tab--active' : ''}`}
+              aria-pressed={tab === t}
+              onClick={() => setTab(t)}
+            >
+              {t === 'map' ? 'Map' : 'Observation'}
+            </button>
+          ))}
+        </nav>
       </header>
       <aside className="panel">
         {loadError ? (
@@ -207,6 +228,12 @@ export default function App() {
           onClick={setClick}
         />
       </main>
+      {tab === 'observation' && data && (
+        <Observation
+          passes={data.passes}
+          geometries={{ DK00FX113: data.site, BIJAGOS: data.bijagos }}
+        />
+      )}
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·
         EEA Natura 2000 · {BASEMAP.attribution}

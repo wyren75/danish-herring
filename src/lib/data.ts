@@ -113,11 +113,15 @@ export const loadGfwEvents = () => fetchAll<GfwEvent>('gfw_fishing_events', ['st
 export const loadPasses = () =>
   fetchAll<SatellitePass>('satellite_passes', ['acq_start', 'product_name'])
 
-export async function loadSite(): Promise<SiteGeometry> {
-  const res = await fetch('/site.geojson')
-  if (!res.ok) throw new Error(`site.geojson: HTTP ${res.status}`)
+async function loadGeometry(file: string): Promise<SiteGeometry> {
+  const res = await fetch(`/${file}`)
+  if (!res.ok) throw new Error(`${file}: HTTP ${res.status}`)
   const fc = await res.json()
   return fc.features[0].geometry as SiteGeometry
 }
+
+export const loadSite = () => loadGeometry('site.geojson')
+// The Bijagós rectangle (section 5.2), only for the Observation tab's inset.
+export const loadBijagos = () => loadGeometry('bijagos.geojson')
 
 export const isFishing = (v: Vessel | undefined) => v?.ship_type === 'Fishing'
