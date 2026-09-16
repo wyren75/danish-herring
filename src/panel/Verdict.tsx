@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { Scene, Snapshot, Vessel } from '../lib/data'
 import { latLon, metres, utcTimeSeconds } from '../lib/format'
 import type { Verdict } from '../lib/verdict'
@@ -34,15 +34,8 @@ export default function VerdictPanel({ scene, verdict, vessels }: Props) {
   const [explainOpen, setExplainOpen] = useState(true)
   const at = utcTimeSeconds(scene.acq_mid)
 
-  // The panel scrolls and the verdict is its last section: bring the answer
-  // into view when a click produces one, so it is never hidden below the list.
-  const ref = useRef<HTMLElement>(null)
-  useEffect(() => {
-    if (verdict) ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [verdict])
-
   return (
-    <section className="verdict" aria-live="polite" ref={ref}>
+    <section className="verdict" aria-live="polite">
       <h2>Verdict</h2>
       {!verdict ? (
         <p className="muted">Click a bright return on the radar to look it up in the AIS record.</p>

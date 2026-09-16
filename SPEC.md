@@ -483,8 +483,15 @@ subject.
 Left panel, top. One row per scene from `scenes`. **Since 15 September the
 counts are precomputed at ingestion** — `n_in_site`, `n_fishing_in_site`,
 `n_trawling_in_site` — from the Danish data at the acquisition instant,
-inside the site polygon. Read them; do not recompute client-side. Sort by
-`n_fishing_in_site` descending, ties by `n_trawling_in_site`, then date.
+inside the site polygon. Read them; do not recompute client-side. **Sort by
+`n_trawling_in_site` descending, then `n_fishing_in_site` descending, then
+date** — vessels caught at trawling speed inside the boundary are the
+strongest opening, ahead of a larger number merely transiting. (Corrected
+16 Sept; the earlier rule had the two keys reversed.)
+
+The scene list should be a **scrollable box of about six rows** with its own
+scrollbar, so that Layers, Radius and the Verdict below it stay visible
+without the page scrolling itself.
 
 Every scene in the table now has radar over the site (footprint-verified)
 and at least three fishing vessels inside the boundary at the instant.

@@ -9,13 +9,13 @@ interface Props {
 }
 
 // Counts are precomputed at ingestion inside the SITE polygon (SPEC.md
-// section 8): fishing vessels first, ties by trawling, then date so the
-// order is deterministic.
+// section 8): vessels at trawling speed first — the strongest opening —
+// then fishing vessels, then date so the order is deterministic.
 export function rankScenes(scenes: Scene[]): Scene[] {
   return [...scenes].sort(
     (a, b) =>
-      b.n_fishing_in_site - a.n_fishing_in_site ||
       b.n_trawling_in_site - a.n_trawling_in_site ||
+      b.n_fishing_in_site - a.n_fishing_in_site ||
       a.acq_mid.localeCompare(b.acq_mid),
   )
 }

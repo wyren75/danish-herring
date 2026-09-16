@@ -88,10 +88,16 @@ body {
 
 /* Scene picker (section 8) */
 
+/* A scrollable box of about six rows (one row ≈ 51 px), so Layers, Radius
+   and the Verdict below stay visible without the panel scrolling (section 8). */
 .scene-list {
   list-style: none;
   margin: 0 0 12px;
-  padding: 0;
+  padding: 0 4px 0 0;
+  max-height: 306px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
 
 .scene {
