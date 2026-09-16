@@ -267,6 +267,89 @@ body {
   accent-color: var(--accent);
 }
 
+/* "Reveal all" (7.3): a real button, but a quiet one. */
+.reveal {
+  margin: 6px 0 0;
+  padding: 4px 12px;
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.reveal:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reveal:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.reveal:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* (i) tooltip (9.4, and 10 from M6). Shown on hover or keyboard focus. */
+/* The tooltip is positioned against the line that holds the (i), so it can
+   span the panel's width instead of clipping at its edge. */
+.has-tip {
+  position: relative;
+}
+
+.tip {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.tip-btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--muted);
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1;
+  cursor: help;
+}
+
+.tip-btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tip-text {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 4px);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.4;
+  z-index: 2;
+}
+
+.tip:hover .tip-text,
+.tip-btn:focus-visible + .tip-text {
+  display: block;
+}
+
 .map-area {
   grid-area: map;
   position: relative;

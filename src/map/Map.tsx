@@ -11,6 +11,13 @@ import type { LonLat } from '../lib/geo'
 import type { Verdict } from '../lib/verdict'
 import { s1TileUrl } from '../lib/wms'
 import {
+  EMPTY_AIS,
+  ICON_PIXEL_RATIO,
+  triangleIcon,
+  type AisFeatures,
+  type AisProps,
+} from './ais'
+import {
   BASEMAP,
   COLORS,
   IDS,
@@ -27,6 +34,10 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl)
 interface Props {
   scene: Scene | null
   showRadar: boolean
+  ais: AisFeatures
+  showAis: boolean
+  // Bumped by "Reveal all": the markers sweep in instead of just appearing.
+  revealKey: number
   verdict: Verdict | null
   onClick: (lonLat: LonLat) => void
 }
@@ -50,7 +61,47 @@ function clickFeatures(verdict: Verdict | null): FeatureCollection {
   return { type: 'FeatureCollection', features }
 }
 
-export default function Map({ scene, showRadar, verdict, onClick }: Props) {
+// Layer 6 visibility is a paint opacity rather than layout visibility, so the
+// matched vessel can stay on screen while the rest are hidden (7.3), and so
+// "Reveal all" can fade the markers in one after another. `t` is the sweep
+// time in ms; Infinity shows everything, null hides all but the match.
+const REVEAL_MS = 700
+const FADE_MS = 200
+type Opacity = maplibregl.ExpressionSpecification | number
+function aisOpacity(t: number | null, n: number): Opacity {
+  if (t === null) return ['case', ['get', 'matched'], 1, 0]
+  if (t === Infinity) return 1
+  const stagger = (REVEAL_MS - FADE_MS) / Math.max(1, n - 1)
+  return [
+    'case',
+    ['get', 'matched'],
+    1,
+    ['min', 1, ['max', 0, ['/', ['-', t, ['*', ['get', 'order'], stagger]], FADE_MS]]],
+  ]
+}
+
+const AIS_HIT_PX = 6
+
+// The marker under a screen point, if any. Both layers are queried within a
+// small box so a 10 px triangle is not a pixel-perfect target.
+function markerAt(map: maplibregl.Map, p: maplibregl.Point): AisProps | null {
+  const box: [maplibregl.PointLike, maplibregl.PointLike] = [
+    [p.x - AIS_HIT_PX, p.y - AIS_HIT_PX],
+    [p.x + AIS_HIT_PX, p.y + AIS_HIT_PX],
+  ]
+  const hits = map.queryRenderedFeatures(box, { layers: [IDS.aisTri, IDS.aisDot] })
+  return hits.length ? (hits[0].properties as AisProps) : null
+}
+
+export default function Map({
+  scene,
+  showRadar,
+  ais,
+  showAis,
+  revealKey,
+  verdict,
+  onClick,
+}: Props) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
   // The map is created once; the handler it calls must always be the latest.
@@ -58,6 +109,12 @@ export default function Map({ scene, showRadar, verdict, onClick }: Props) {
   useEffect(() => {
     onClickRef.current = onClick
   }, [onClick])
+  // Hidden markers are still "rendered" as far as hit-testing goes; the
+  // click and hover handlers need to know whether they are visible.
+  const showAisRef = useRef(showAis)
+  useEffect(() => {
+    showAisRef.current = showAis
+  }, [showAis])
   // Set once the style and our static layers are in; scene-driven layers
   // can only be added after that.
   const [ready, setReady] = useState(false)
@@ -140,6 +197,56 @@ export default function Map({ scene, showRadar, verdict, onClick }: Props) {
         },
       })
 
+      // Layer 6: AIS snapshots (7.3). Triangles rotated to cog for moving
+      // vessels, dots for the rest; orange if fishing, grey otherwise; a white
+      // ring inside the site; the matched vessel larger with a white outline.
+      // The source stays; its data is replaced per scene and per verdict.
+      map.addImage(IDS.aisIcon, triangleIcon(), { sdf: true, pixelRatio: ICON_PIXEL_RATIO })
+      map.addSource(IDS.ais, { type: 'geojson', data: EMPTY_AIS })
+      const fill: maplibregl.ExpressionSpecification = [
+        'case', ['get', 'fishing'], COLORS.accent, COLORS.grey,
+      ]
+      const ring: maplibregl.ExpressionSpecification = [
+        'case', ['any', ['get', 'matched'], ['get', 'inSite']], 2, 0,
+      ]
+      map.addLayer({
+        id: IDS.aisTri,
+        type: 'symbol',
+        source: IDS.ais,
+        filter: ['==', ['get', 'moving'], true],
+        layout: {
+          'icon-image': IDS.aisIcon,
+          'icon-rotate': ['get', 'cog'],
+          'icon-rotation-alignment': 'map',
+          'icon-size': ['case', ['get', 'matched'], 1.6, 1],
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+        },
+        paint: {
+          'icon-color': fill,
+          'icon-halo-color': COLORS.white,
+          'icon-halo-width': ring,
+          'icon-opacity': aisOpacity(null, 0),
+          'icon-opacity-transition': { duration: 0 },
+        },
+      })
+      map.addLayer({
+        id: IDS.aisDot,
+        type: 'circle',
+        source: IDS.ais,
+        filter: ['==', ['get', 'moving'], false],
+        paint: {
+          'circle-radius': ['case', ['get', 'matched'], 5, 3],
+          'circle-color': fill,
+          'circle-stroke-color': COLORS.white,
+          'circle-stroke-width': ring,
+          'circle-opacity': aisOpacity(null, 0),
+          'circle-opacity-transition': { duration: 0 },
+          'circle-stroke-opacity': aisOpacity(null, 0),
+          'circle-stroke-opacity-transition': { duration: 0 },
+        },
+      })
+
       // Layer 7: click marker + match line, on top of everything. The source
       // stays; its data is replaced on every click.
       map.addSource(IDS.click, { type: 'geojson', data: EMPTY })
@@ -166,7 +273,20 @@ export default function Map({ scene, showRadar, verdict, onClick }: Props) {
       setReady(true)
     })
 
-    map.on('click', (e) => onClickRef.current([e.lngLat.lng, e.lngLat.lat]))
+    // A visible marker is a shortcut to the matched panel (7.3): the click
+    // lands on the vessel's AIS position, so the verdict is that vessel.
+    const visibleMarkerAt = (p: maplibregl.Point) => {
+      if (!map.getLayer(IDS.aisTri)) return null
+      const hit = markerAt(map, p)
+      return hit && (showAisRef.current || hit.matched) ? hit : null
+    }
+    map.on('click', (e) => {
+      const hit = visibleMarkerAt(e.point)
+      onClickRef.current(hit ? [hit.lon, hit.lat] : [e.lngLat.lng, e.lngLat.lat])
+    })
+    map.on('mousemove', (e) => {
+      map.getCanvas().style.cursor = visibleMarkerAt(e.point) ? 'pointer' : ''
+    })
 
     return () => {
       map.remove()
@@ -211,6 +331,51 @@ export default function Map({ scene, showRadar, verdict, onClick }: Props) {
     const source = map.getSource(IDS.click) as maplibregl.GeoJSONSource | undefined
     source?.setData(clickFeatures(verdict))
   }, [ready, verdict])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return
+    const source = map.getSource(IDS.ais) as maplibregl.GeoJSONSource | undefined
+    source?.setData(ais)
+  }, [ready, ais])
+
+  // Show / hide, and the "Reveal all" sweep. Each new revealKey runs the
+  // opacity expression forward over REVEAL_MS; a plain toggle jumps to the end.
+  const revealedKey = useRef(0)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return
+    const n = ais.features.length
+    const apply = (t: number | null) => {
+      const expr = aisOpacity(t, n)
+      map.setPaintProperty(IDS.aisTri, 'icon-opacity', expr)
+      map.setPaintProperty(IDS.aisDot, 'circle-opacity', expr)
+      map.setPaintProperty(IDS.aisDot, 'circle-stroke-opacity', expr)
+    }
+    if (!showAis) {
+      apply(null)
+      return
+    }
+    if (revealKey === revealedKey.current) {
+      apply(Infinity)
+      return
+    }
+    revealedKey.current = revealKey
+    const start = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const t = now - start
+      if (t >= REVEAL_MS) {
+        apply(Infinity)
+        return
+      }
+      apply(t)
+      frame = requestAnimationFrame(tick)
+    }
+    apply(0)
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [ready, ais, showAis, revealKey])
 
   return (
     <>

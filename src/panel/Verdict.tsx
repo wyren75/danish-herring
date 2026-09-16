@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { Scene, Snapshot, Vessel } from '../lib/data'
 import { latLon, metres, utcTimeSeconds } from '../lib/format'
+import { midFlag } from '../lib/geo'
 import type { Verdict } from '../lib/verdict'
+import Tip from './Tip'
 
 interface Props {
   scene: Scene
@@ -26,6 +28,13 @@ function method(s: Snapshot): string {
   if (s.dt_after_s != null) parts.push(`${s.dt_after_s} s after`)
   return parts.length ? `${s.method} (AIS ${parts.join(', ')})` : s.method
 }
+
+// The offset tooltip (SPEC.md 9.4), fixed copy.
+const OFFSET_TIP =
+  'A moving vessel appears displaced along the satellite’s flight direction in ' +
+  'radar imagery — often by 100–300 m at fishing speeds, more for faster ships. ' +
+  'An offset of a few hundred metres between the radar return and the AIS position ' +
+  'is expected, not an error.'
 
 // The verdict panel (SPEC.md sections 9.2 and 9.3). A live region so a
 // screen reader hears the answer to each click (section 14).
@@ -91,12 +100,11 @@ function Matched({
 }) {
   const s = nearest.snapshot
   const v = vessels.get(s.mmsi)
-  // Flag from the MMSI's Maritime Identification Digits arrives with M5.
   return (
     <>
       <p className="verdict-headline">{v?.name || '(no name broadcast)'}</p>
       <p>
-        {shipType(v)} · {dims(v)}
+        {shipType(v)} · {midFlag(s.mmsi)} · {dims(v)}
       </p>
       <p className="muted mono">
         MMSI {s.mmsi} · IMO {v?.imo || dash} · call {v?.callsign || dash}
@@ -113,7 +121,9 @@ function Matched({
         <dt>method</dt>
         <dd>{method(s)}</dd>
       </dl>
-      <p>Offset from your click: {metres(nearest.distanceM)}</p>
+      <p className="has-tip">
+        Offset from your click: {metres(nearest.distanceM)} <Tip text={OFFSET_TIP} />
+      </p>
       <InSite verdict={verdict} />
     </>
   )

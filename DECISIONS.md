@@ -69,3 +69,35 @@ vessels at trawling speed inside the boundary are the strongest opening, so
 02 Sep (6 fishing, 4 trawling) opens by default. And instead of the verdict
 scrolling itself into view, the scene list is a box of about six rows with
 its own scrollbar, so Layers, Radius and the Verdict stay on screen.
+
+## 2026-09-16 · M5 · "Reveal all" is a quiet button, disabled once AIS is shown
+
+Open question 19.3. It is a real button, but outlined and small, under the
+layer toggles rather than beside the verdict — the demo is stronger if the
+user tries a blind click first. Once the AIS layer is on it is disabled;
+the toggle does the same job without the animation. "Reveal all" sweeps
+the markers in over 0.7 s, outward from the click if there is one, else
+west to east.
+
+## 2026-09-16 · M5 · Marker click sets the click at the AIS position
+
+Section 7.3 says clicking a marker is a shortcut to the matched panel. It
+is implemented literally: the click lands on the vessel's AIS position, so
+the ordinary nearest-snapshot logic produces that vessel and the panel
+reads "Offset from your click: 0 m". No second code path, and the verdict
+stays a pure function of click, scene and radius (section 14). Hidden
+markers are not clickable; the always-drawn matched marker is.
+
+## 2026-09-16 · M5 · Markers are one signed-distance-field image
+
+MapLibre draws the triangle from a single SDF bitmap generated in code
+(`src/map/ais.ts`), so colour, the white in-site ring and the larger
+matched size are per-feature paint properties instead of eight bitmaps.
+A moving vessel that reports no course gets a dot, like a stationary one.
+
+## 2026-09-16 · M5 · MID table covers every MID in the snapshots
+
+Section 9.2's list plus the others that occur in `snapshots` (Liberia,
+Marshall Islands, Bahamas, Malta, Cyprus, Portugal, Greece, Panama,
+Singapore, Antigua, Barbados, Seychelles, Falklands, Finland, Ireland,
+Italy). Anything else still shows the three digits.

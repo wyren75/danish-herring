@@ -10,6 +10,7 @@ import {
 } from './lib/data'
 import type { LonLat, SiteGeometry } from './lib/geo'
 import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
+import { aisFeatures, EMPTY_AIS } from './map/ais'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
 import Layers from './panel/Layers'
@@ -32,6 +33,9 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Layer 3 is on by default (section 7 table).
   const [showRadar, setShowRadar] = useState(true)
+  // Layer 6 is off by default — the user looks at the radar first (7.3).
+  const [showAis, setShowAis] = useState(false)
+  const [revealKey, setRevealKey] = useState(0)
   // Click state (section 9): where the user clicked, and the matching radius.
   const [click, setClick] = useState<LonLat | null>(null)
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
@@ -79,6 +83,17 @@ export default function App() {
     [data, click, sceneSnapshots, radiusM],
   )
 
+  const ais = useMemo(
+    () => (data ? aisFeatures(sceneSnapshots, data.vessels, data.site, verdict) : EMPTY_AIS),
+    [data, sceneSnapshots, verdict],
+  )
+
+  // "Reveal all" is the toggle plus an animation (7.3).
+  const reveal = useCallback(() => {
+    setShowAis(true)
+    setRevealKey((k) => k + 1)
+  }, [])
+
   return (
     <div className="app">
       <header className="header">
@@ -93,7 +108,13 @@ export default function App() {
         ) : data ? (
           <>
             <ScenePicker scenes={data.scenes} selectedId={selectedId} onSelect={selectScene} />
-            <Layers showRadar={showRadar} onShowRadar={setShowRadar} />
+            <Layers
+              showRadar={showRadar}
+              onShowRadar={setShowRadar}
+              showAis={showAis}
+              onShowAis={setShowAis}
+              onReveal={reveal}
+            />
             <Radius radiusM={radiusM} onChange={setRadiusM} />
             {scene && <VerdictPanel scene={scene} verdict={verdict} vessels={data.vessels} />}
           </>
@@ -105,7 +126,15 @@ export default function App() {
         )}
       </aside>
       <main className="map-area">
-        <MapView scene={scene} showRadar={showRadar} verdict={verdict} onClick={setClick} />
+        <MapView
+          scene={scene}
+          showRadar={showRadar}
+          ais={ais}
+          showAis={showAis}
+          revealKey={revealKey}
+          verdict={verdict}
+          onClick={setClick}
+        />
       </main>
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·

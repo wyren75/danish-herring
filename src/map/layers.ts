@@ -38,7 +38,9 @@ export const MAX_BOUNDS: [[number, number], [number, number]] = [
 ]
 
 export const COLORS = {
-  accent: '#f5a524',
+  accent: '#f5a524', // fishing vessels and the site outline
+  grey: '#c4c8d2', // every other vessel (7.3)
+  white: '#ffffff', // in-site ring and the matched vessel's outline
   bg: '#0b0e14',
   text: '#e6e8ee',
 }
@@ -50,6 +52,10 @@ export const IDS = {
   s1: 's1',
   site: 'site',
   siteLabel: 'site-label',
+  ais: 'ais', // layer 6: one source, triangles for moving vessels, dots for the rest
+  aisTri: 'ais-tri',
+  aisDot: 'ais-dot',
+  aisIcon: 'ais-triangle', // the SDF image the triangle layer uses
   click: 'click', // layer 7: one source, a line layer and a marker layer
   clickLine: 'click-line',
   clickMarker: 'click-marker',
