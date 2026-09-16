@@ -28,27 +28,124 @@ body {
   font-size: 14px;
 }
 
-/* Layout: header / (panel | map) / footer */
+/* Layout (section 13): top bar / (map | inspector) / footer */
 
 .app {
   display: grid;
-  grid-template-columns: 320px 1fr;
-  grid-template-rows: 44px 1fr 28px;
-  grid-template-areas:
-    'header header'
-    'panel  map'
-    'footer footer';
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr 28px;
   height: 100%;
 }
 
-.header {
-  grid-area: header;
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 0 16px;
+/* Top bar (13.3): two rows, full width. Above the map so the scene dropdown
+   and the (i) tooltips draw over it. */
+.topbar {
+  position: relative;
+  z-index: 3;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
+}
+
+.topbar-row1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 44px;
+  padding: 0 16px;
+}
+
+.topbar-row2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding: 0 16px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.topbar-sep {
+  color: var(--border);
+}
+
+/* Scene stepper (13.3): previous, current scene + caret, next; centred in
+   row 1. */
+.stepper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepper-arrow,
+.stepper-scene {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.stepper-arrow {
+  padding: 0 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.stepper-scene {
+  min-width: 0;
+  padding: 4px 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stepper-caret {
+  margin-left: 6px;
+  color: var(--muted);
+}
+
+.stepper-arrow:hover:not(:disabled),
+.stepper-scene:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.stepper-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.stepper-arrow:focus-visible,
+.stepper-scene:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.stepper-scene[aria-expanded='true'] {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+/* The dropdown: the ScenePicker list as it was, under the scene button. */
+.stepper-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px;
+  padding: 12px 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .brand {
@@ -64,6 +161,7 @@ body {
 
 /* Map / Observation tabs (section 13). */
 .tabs {
+  flex: none;
   margin-left: auto;
   display: flex;
   gap: 4px;
@@ -95,15 +193,9 @@ body {
   border-bottom-color: var(--accent);
 }
 
-.panel {
-  grid-area: panel;
-  overflow-y: auto;
-  padding: 16px;
-  background: var(--panel);
-  border-right: 1px solid var(--border);
-}
-
-.panel h2 {
+.stepper-menu h2,
+.inspector h2,
+.radius h2 {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
@@ -120,13 +212,13 @@ body {
   color: var(--accent);
 }
 
-/* Scene picker (section 8) */
+/* Scene picker (section 8), now the stepper's dropdown (13.3) */
 
-/* A scrollable box of about six rows (one row ≈ 51 px), so Layers, Radius
-   and the Verdict below stay visible without the panel scrolling (section 8). */
+/* A scrollable box of about six rows (one row ≈ 51 px) with its own
+   scrollbar (section 8). */
 .scene-list {
   list-style: none;
-  margin: 0 0 12px;
+  margin: 0;
   padding: 0 4px 0 0;
   max-height: 306px;
   overflow-y: auto;
@@ -183,32 +275,99 @@ body {
   letter-spacing: 0.1em;
 }
 
-.scene-detail {
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-
 .scene-product {
-  display: block;
+  flex: 0 1 auto;
+  min-width: 80px;
+  max-width: 480px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
-  word-break: break-all;
 }
 
-.scene-detail p {
-  margin: 8px 0 0;
-  font-size: 12px;
+/* Inspector (13.5): the result, 340 px on the right, slid in from off-screen
+   when there is a click and the map narrows to make room. */
+.main {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
 }
 
-/* Layer toggles (section 7), radius slider (9.1) and verdict (9.2 / 9.3):
-   stacked panel sections. */
+.inspector {
+  flex: 0 0 340px;
+  display: flex;
+  flex-direction: column;
+  margin-right: -340px;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  transition: margin-right 0.25s ease-out;
+}
 
-.layers,
-.radius,
-.verdict {
-  margin-top: 16px;
-  padding-top: 12px;
+.inspector--open {
+  margin-right: 0;
+}
+
+/* Below 1100 px the inspector may overlay the map instead (13.6). */
+@media (max-width: 1100px) {
+  .inspector {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    margin-right: 0;
+    transform: translateX(100%);
+    transition: transform 0.25s ease-out;
+    z-index: 2;
+  }
+
+  .inspector--open {
+    transform: none;
+  }
+}
+
+.inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0;
+}
+
+.inspector-head h2 {
+  margin: 0;
+}
+
+.inspector-close {
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.inspector-close:hover {
+  color: var(--text);
+  background: var(--bg);
+}
+
+.inspector-close:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px 16px;
+}
+
+/* The radius slider (9.1) sits inside the verdict (13.5, item 4). */
+.radius {
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
 }
 
@@ -388,6 +547,7 @@ body {
   left: 0;
   right: 0;
   bottom: calc(100% + 4px);
+  white-space: normal;
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -404,10 +564,86 @@ body {
   display: block;
 }
 
+/* On the top bar there is no room above: the tooltip opens downward from
+   the bar's right edge, over the map, at a readable width. It is positioned
+   against the bar itself so the second row's clipping does not catch it. */
+.topbar .has-tip {
+  position: static;
+}
+
+.topbar .tip-text {
+  top: calc(100% + 6px);
+  bottom: auto;
+  left: auto;
+  right: 16px;
+  width: 420px;
+}
+
 .map-area {
-  grid-area: map;
   position: relative;
+  flex: 1;
+  min-width: 0;
   min-height: 0;
+}
+
+/* Layers card (13.4): floats top-right under the zoom control (10 px margin
+   + two 29 px buttons), 220 px wide, panel colour at 92 %. */
+.layers-card {
+  position: absolute;
+  top: 80px;
+  right: 10px;
+  z-index: 1;
+  width: 220px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: rgba(19, 23, 32, 0.92);
+  font-size: 13px;
+}
+
+.layers-card summary {
+  padding: 6px 10px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.layers-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.layers-card summary span {
+  color: var(--muted);
+}
+
+.layers-card[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.layers-card summary:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.layers {
+  padding: 6px 10px 10px;
+}
+
+/* First-visit hint (13.4): one line in a pill, centred on the map. */
+.hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(19, 23, 32, 0.92);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Thin indeterminate bar along the top of the map while radar tiles load
@@ -457,7 +693,6 @@ body {
 }
 
 .footer {
-  grid-area: footer;
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -497,37 +732,8 @@ body {
   filter: invert(0.85);
 }
 
-/* Two counts at the instant (section 10.1): once, under the scene details. */
+/* Two counts at the instant (section 10.1): one line on the top bar (13.3). */
 .counts {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-size: 12px;
-}
-
-.counts p {
-  margin: 0 0 4px;
-}
-
-.counts-headline {
-  font-size: 13px;
-  color: var(--text);
-}
-
-.counts-facts {
-  display: grid;
-  grid-template-columns: 92px 1fr;
-  gap: 2px 8px;
-  margin: 0 0 0 12px;
-  font-size: 13px;
-}
-
-.counts-facts dt {
-  color: var(--muted);
-}
-
-.counts-facts dd {
-  margin: 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -589,13 +795,12 @@ body {
   display: none;
 }
 
-/* Observation tab (section 11). Covers the panel and map, which stay
+/* Observation tab (section 11). Covers the map and inspector, which stay
    mounted underneath so the radar keeps its tiles and state. */
 .observation {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  position: relative;
-  z-index: 2;
+  position: absolute;
+  inset: 0;
+  z-index: 3;
   overflow-y: auto;
   padding: 24px 32px 32px;
   background: var(--bg);

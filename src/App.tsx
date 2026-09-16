@@ -13,7 +13,7 @@ import {
   type Snapshot,
   type Vessel,
 } from './lib/data'
-import type { LonLat, SiteGeometry } from './lib/geo'
+import { bounds, type LonLat, type SiteGeometry } from './lib/geo'
 import { eventsAroundPass, eventsOnSceneDay } from './lib/gfw'
 import { clearS2Pass, type S2Pick } from './lib/s2'
 import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
@@ -22,11 +22,11 @@ import { EMPTY_GFW, gfwFeatures } from './map/gfw'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
 import Observation from './observation/Observation'
-import Layers from './panel/Layers'
-import Radius from './panel/Radius'
+import Inspector from './panel/Inspector'
+import LayersCard from './panel/LayersCard'
 import SceneCounts from './panel/SceneCounts'
-import ScenePicker, { rankScenes } from './panel/ScenePicker'
-import VerdictPanel from './panel/Verdict'
+import { rankScenes } from './panel/ScenePicker'
+import TopBar from './panel/TopBar'
 
 export const APP_NAME = 'Danish Herring'
 
@@ -63,6 +63,8 @@ export default function App() {
   // Click state (section 9): where the user clicked, and the matching radius.
   const [click, setClick] = useState<LonLat | null>(null)
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
+  // The first-visit hint (13.4) goes on the first map click and stays gone.
+  const [hint, setHint] = useState(true)
 
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
   useEffect(() => {
@@ -107,11 +109,20 @@ export default function App() {
   // The Sentinel-2 pass the scene may show, if a clear one is within a day.
   const s2 = useMemo(() => (data && scene ? clearS2Pass(data.passes, scene) : NO_S2), [data, scene])
 
-  // Selecting a scene clears any click state (section 8).
+  // Selecting a scene clears any click state (section 8), which also closes
+  // the inspector (13.5).
   const selectScene = useCallback((id: string) => {
     setSelectedId(id)
     setClick(null)
   }, [])
+  const clearClick = useCallback(() => setClick(null), [])
+  const mapClick = useCallback((lonLat: LonLat) => {
+    setHint(false)
+    setClick(lonLat)
+  }, [])
+
+  // What the map fits to (13.4): the site polygon's bounds.
+  const siteBounds = useMemo(() => (data ? bounds(data.site) : null), [data])
 
   const verdict = useMemo(
     () => (data && click ? computeVerdict(click, sceneSnapshots, radiusM, data.site) : null),
@@ -146,94 +157,100 @@ export default function App() {
     setRevealKey((k) => k + 1)
   }, [])
 
+  const tabs = (
+    <nav className="tabs" aria-label="Tabs">
+      {(['map', 'observation'] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          className={`tab${tab === t ? ' tab--active' : ''}`}
+          aria-pressed={tab === t}
+          onClick={() => setTab(t)}
+        >
+          {t === 'map' ? 'Map' : 'Observation'}
+        </button>
+      ))}
+    </nav>
+  )
+
+  // v1 layout (section 13): setup in the top bar, the map full width with
+  // its furniture on it, the result in an inspector that exists only once
+  // there is one.
   return (
     <div className="app">
-      <header className="header">
-        <span className="brand">{APP_NAME}</span>
-        <span className="subtitle">Hirsholmene · Kattegat</span>
-        <nav className="tabs" aria-label="Tabs">
-          {(['map', 'observation'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`tab${tab === t ? ' tab--active' : ''}`}
-              aria-pressed={tab === t}
-              onClick={() => setTab(t)}
-            >
-              {t === 'map' ? 'Map' : 'Observation'}
-            </button>
-          ))}
-        </nav>
-      </header>
-      <aside className="panel">
-        {loadError ? (
-          <p className="error" role="alert">
-            Could not load data: {loadError}
-          </p>
-        ) : data ? (
-          <>
-            <ScenePicker scenes={data.scenes} selectedId={selectedId} onSelect={selectScene}>
-              {scene && (
-                <SceneCounts
-                  scene={scene}
-                  sceneSnapshots={sceneSnapshots}
-                  vessels={data.vessels}
-                  events={data.events}
-                  site={data.site}
-                />
-              )}
-            </ScenePicker>
-            <Layers
-              showRadar={showRadar}
-              onShowRadar={setShowRadar}
+      <TopBar
+        title={APP_NAME}
+        scenes={data?.scenes ?? []}
+        scene={scene}
+        onSelect={selectScene}
+        tabs={tabs}
+        loadError={loadError}
+        counts={
+          data && scene ? (
+            <SceneCounts
               scene={scene}
-              s2={s2}
-              showS2={showS2}
-              onShowS2={setShowS2}
-              showAis={showAis}
-              onShowAis={setShowAis}
-              onReveal={reveal}
-              showGfw={showGfw}
-              onShowGfw={setShowGfw}
+              sceneSnapshots={sceneSnapshots}
+              vessels={data.vessels}
+              events={data.events}
+              site={data.site}
             />
-            <Radius radiusM={radiusM} onChange={setRadiusM} />
-            {scene && (
-              <VerdictPanel
-                scene={scene}
-                events={data.events}
-                matchedEvents={matchedEvents}
-                verdict={verdict}
-                vessels={data.vessels}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            <h2>Scenes</h2>
-            <p className="muted">Loading…</p>
-          </>
+          ) : null
+        }
+      />
+      <div className="main">
+        <main className="map-area">
+          <MapView
+            fit={siteBounds}
+            scene={scene}
+            showRadar={showRadar}
+            s2Pass={s2.pass}
+            showS2={showS2}
+            gfw={gfw}
+            ais={ais}
+            showAis={showAis}
+            revealKey={revealKey}
+            verdict={verdict}
+            onClick={mapClick}
+          />
+          <LayersCard
+            showRadar={showRadar}
+            onShowRadar={setShowRadar}
+            scene={scene}
+            s2={s2}
+            showS2={showS2}
+            onShowS2={setShowS2}
+            showAis={showAis}
+            onShowAis={setShowAis}
+            onReveal={reveal}
+            showGfw={showGfw}
+            onShowGfw={setShowGfw}
+          />
+          {hint && (
+            <p className="hint">
+              Pick a scene above, then click a bright dot inside the orange line.
+            </p>
+          )}
+        </main>
+        {data && scene && (
+          <Inspector
+            open={click !== null}
+            onClose={clearClick}
+            radiusM={radiusM}
+            onRadius={setRadiusM}
+            scene={scene}
+            events={data.events}
+            matchedEvents={matchedEvents}
+            verdict={verdict}
+            vessels={data.vessels}
+          />
         )}
-      </aside>
-      <main className="map-area">
-        <MapView
-          scene={scene}
-          showRadar={showRadar}
-          s2Pass={s2.pass}
-          showS2={showS2}
-          gfw={gfw}
-          ais={ais}
-          showAis={showAis}
-          revealKey={revealKey}
-          verdict={verdict}
-          onClick={setClick}
-        />
-      </main>
-      {tab === 'observation' && data && (
-        <Observation
-          passes={data.passes}
-          geometries={{ DK00FX113: data.site, BIJAGOS: data.bijagos }}
-        />
-      )}
+        {tab === 'observation' && data && (
+          <Observation
+            passes={data.passes}
+            geometries={{ DK00FX113: data.site, BIJAGOS: data.bijagos }}
+          />
+        )}
+      </div>
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·
         EEA Natura 2000 · {BASEMAP.attribution}

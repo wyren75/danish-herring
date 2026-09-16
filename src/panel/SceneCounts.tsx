@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import type { GfwEvent, Scene, Snapshot, Vessel } from '../lib/data'
-import { utcTime } from '../lib/format'
 import type { SiteGeometry } from '../lib/geo'
 import { sceneCounts } from '../lib/gfw'
 import Tip from './Tip'
@@ -23,25 +22,16 @@ interface Props {
 }
 
 // Two independent counts at the instant, inside the site — no ratio (10.1).
-// Shown once, under the scene details. Zero is a result, not an error.
+// Shown once, on the top bar's second row, as one line (13.3). Zero is a
+// result, not an error.
 export default function SceneCounts({ scene, sceneSnapshots, vessels, events, site }: Props) {
   const c = useMemo(
     () => sceneCounts(scene, sceneSnapshots, vessels, events, site),
     [scene, sceneSnapshots, vessels, events, site],
   )
   return (
-    <div className="counts">
-      <p className="has-tip counts-headline">
-        At {utcTime(scene.acq_mid)} inside the site <Tip text={COUNTS_TIP} />
-      </p>
-      <dl className="counts-facts">
-        <dt>Danish AIS</dt>
-        <dd>
-          {c.danish} fishing {c.danish === 1 ? 'vessel' : 'vessels'}
-        </dd>
-        <dt>Global Fishing</dt>
-        <dd>{c.gfw} in a recorded fishing event</dd>
-      </dl>
-    </div>
+    <span className="counts has-tip">
+      in site: Danish AIS {c.danish} fishing · GFW {c.gfw} in event <Tip text={COUNTS_TIP} />
+    </span>
   )
 }

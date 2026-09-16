@@ -22,7 +22,8 @@ interface Props {
 
 // Layer toggles (SPEC.md section 7 table). AIS is off by default and
 // "Reveal all" is deliberately discreet (open question 19.3): the user should
-// try a blind click first. GFW is context, also off.
+// try a blind click first. GFW is context, also off. Lives in the floating
+// Layers card on the map (13.4), which carries the heading.
 export default function Layers({
   showRadar,
   onShowRadar,
@@ -38,7 +39,6 @@ export default function Layers({
 }: Props) {
   return (
     <section className="layers">
-      <h2>Layers</h2>
       <label className="layer-toggle">
         <input
           type="checkbox"

@@ -29,6 +29,20 @@ export function pointInPolygon(lon: number, lat: number, geom: SiteGeometry): bo
   return polygons.some((rings) => pointInRing(lon, lat, rings[0]))
 }
 
+/** [[west, south], [east, north]] of every ring — what the map fits to (13.4). */
+export function bounds(geom: SiteGeometry): [LonLat, LonLat] {
+  const polygons = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates
+  let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity
+  for (const rings of polygons)
+    for (const [lon, lat] of rings[0]) {
+      if (lon < w) w = lon
+      if (lon > e) e = lon
+      if (lat < s) s = lat
+      if (lat > n) n = lat
+    }
+  return [[w, s], [e, n]]
+}
+
 const EARTH_RADIUS_M = 6_371_000
 const rad = (deg: number) => (deg * Math.PI) / 180
 

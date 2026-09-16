@@ -21,8 +21,8 @@ import { EMPTY_GFW, squareIcon, type GfwFeatures, type GfwProps } from './gfw'
 import {
   BASEMAP,
   COLORS,
+  FIT_PADDING_PX,
   IDS,
-  INITIAL_VIEW,
   MAX_BOUNDS,
   SENTINEL_ATTRIBUTION,
   SITE_LABEL,
@@ -33,6 +33,9 @@ import {
 maplibregl.setWorkerUrl(maplibreWorkerUrl)
 
 interface Props {
+  // The site polygon's bounds (13.4): the map fits to them on load and on
+  // every window resize. Null until site.geojson has been read.
+  fit: [LonLat, LonLat] | null
   scene: Scene | null
   showRadar: boolean
   // Layer 2 exists only when a clear Sentinel-2 pass lies within a day of
@@ -100,6 +103,7 @@ function markerAt(map: maplibregl.Map, p: maplibregl.Point): AisProps | null {
 }
 
 export default function Map({
+  fit,
   scene,
   showRadar,
   s2Pass,
@@ -137,8 +141,13 @@ export default function Map({
     const map = new maplibregl.Map({
       container: container.current,
       style: BASEMAP.style,
-      center: INITIAL_VIEW.center,
-      zoom: INITIAL_VIEW.zoom,
+      // First paint on the site's known rectangle; the polygon's own bounds
+      // take over below as soon as they are read.
+      bounds: [
+        [SITE_RECT.w, SITE_RECT.s],
+        [SITE_RECT.e, SITE_RECT.n],
+      ],
+      fitBoundsOptions: { padding: FIT_PADDING_PX },
       minZoom: ZOOM.min,
       maxZoom: ZOOM.max,
       maxBounds: MAX_BOUNDS,
@@ -372,6 +381,24 @@ export default function Map({
       mapRef.current = null
     }
   }, [])
+
+  // Initial view (13.4): fit the whole site polygon with 60 px padding, and
+  // again whenever the window is resized — never a fixed centre and zoom.
+  // Only the window: the inspector narrowing the map must not move the view
+  // out from under the click that opened it.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !fit) return
+    const refit = () => {
+      // The window event can land before MapLibre's own resize observer has
+      // measured the new container; measure first so the fit uses it.
+      map.resize()
+      map.fitBounds(fit, { padding: FIT_PADDING_PX, duration: 0 })
+    }
+    refit()
+    window.addEventListener('resize', refit)
+    return () => window.removeEventListener('resize', refit)
+  }, [fit])
 
   // A Sentinel Hub raster source and layer, inserted below `beforeId`.
   // Returns the cleanup that removes both.

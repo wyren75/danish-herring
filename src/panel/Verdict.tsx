@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { GfwEvent, Scene, Snapshot, Vessel } from '../lib/data'
 import { duration, kilometres, latLon, metres, utcTime, utcTimeSeconds } from '../lib/format'
 import { midFlag } from '../lib/geo'
@@ -15,6 +15,9 @@ interface Props {
   matchedEvents: GfwEvent[]
   verdict: Verdict | null
   vessels: Map<string, Vessel>
+  // The radius slider (13.5, item 4): after the verdict and GFW lines, before
+  // the "no contact" block.
+  children?: ReactNode
 }
 
 const dash = '—'
@@ -44,14 +47,20 @@ const OFFSET_TIP =
 
 // The verdict panel (SPEC.md sections 9.2 and 9.3). A live region so a
 // screen reader hears the answer to each click (section 14).
-export default function VerdictPanel({ scene, events, matchedEvents, verdict, vessels }: Props) {
+export default function VerdictPanel({
+  scene,
+  events,
+  matchedEvents,
+  verdict,
+  vessels,
+  children,
+}: Props) {
   // The explanatory block is open the first time and remembers being closed.
   const [explainOpen, setExplainOpen] = useState(true)
   const at = utcTimeSeconds(scene.acq_mid)
 
   return (
     <section className="verdict" aria-live="polite">
-      <h2>Verdict</h2>
       {!verdict ? (
         <p className="muted">Click a bright return on the radar to look it up in the AIS record.</p>
       ) : verdict.matched && verdict.nearest ? (
@@ -62,7 +71,9 @@ export default function VerdictPanel({ scene, events, matchedEvents, verdict, ve
           vessels={vessels}
           events={events}
           matchedEvents={matchedEvents}
-        />
+        >
+          {children}
+        </Matched>
       ) : (
         <>
           <p className="verdict-headline">No AIS contact within {metres(verdict.radiusM)}</p>
@@ -81,6 +92,7 @@ export default function VerdictPanel({ scene, events, matchedEvents, verdict, ve
               'No AIS vessel in the data for this scene.'
             )}
           </p>
+          {children}
           <details
             className="explain"
             open={explainOpen}
@@ -109,6 +121,7 @@ function Matched({
   vessels,
   events,
   matchedEvents,
+  children,
 }: {
   nearest: NonNullable<Verdict['nearest']>
   verdict: Verdict
@@ -116,6 +129,7 @@ function Matched({
   vessels: Map<string, Vessel>
   events: GfwEvent[]
   matchedEvents: GfwEvent[]
+  children?: ReactNode
 }) {
   const s = nearest.snapshot
   const v = vessels.get(s.mmsi)
@@ -146,6 +160,7 @@ function Matched({
       </p>
       <GfwContext snapshot={s} scene={scene} around={matchedEvents} events={events} />
       <InSite verdict={verdict} />
+      {children}
     </>
   )
 }

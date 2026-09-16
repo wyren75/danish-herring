@@ -1,14 +1,11 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo } from 'react'
 import type { Scene } from '../lib/data'
-import { utcDate, utcTime, utcTimeSeconds } from '../lib/format'
+import { utcDate, utcTime } from '../lib/format'
 
 interface Props {
   scenes: Scene[]
   selectedId: string | null
   onSelect: (sceneId: string) => void
-  // Rendered under the selected scene's details: the two counts at the
-  // instant, shown once per scene (section 10.1).
-  children?: ReactNode
 }
 
 // Counts are precomputed at ingestion inside the SITE polygon (SPEC.md
@@ -26,14 +23,15 @@ export function rankScenes(scenes: Scene[]): Scene[] {
 // Activity glyph, up to four dots. Trawlers are counted twice — they are
 // fishing vessels that are also working — which reproduces the spec's
 // examples (6·4 → ●●●●, 5·4 → ●●●●, 7·0 → ●●●).
-const dots = (scene: Scene) =>
+export const dots = (scene: Scene) =>
   '●'.repeat(
     Math.min(4, Math.round((scene.n_fishing_in_site + scene.n_trawling_in_site) / 2.5)),
   )
 
-export default function ScenePicker({ scenes, selectedId, onSelect, children }: Props) {
+// The list of scenes in section-8 order, one row each. In v1 (13.3) it is
+// the scene stepper's dropdown rather than a permanent panel.
+export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
   const rows = useMemo(() => rankScenes(scenes), [scenes])
-  const selected = rows.find((s) => s.scene_id === selectedId)
 
   return (
     <section>
@@ -64,16 +62,6 @@ export default function ScenePicker({ scenes, selectedId, onSelect, children }: 
           )
         })}
       </ul>
-      {selected && (
-        <div className="scene-detail">
-          <code className="scene-product">{selected.product_name}</code>
-          <p className="muted">
-            Radar acquired at {utcTimeSeconds(selected.acq_mid)}. AIS interpolated to this
-            second.
-          </p>
-          {children}
-        </div>
-      )}
     </section>
   )
 }

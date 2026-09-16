@@ -19,18 +19,19 @@ export const BASEMAP = {
 // ---------------------------------------------------------------------------
 export const BOX = { w: 10.321, s: 57.23, e: 10.767, n: 57.686 } as const
 
-// The site polygon's tightest enclosing rectangle — used only to place the
-// boundary label at its north-east corner (section 7.2).
+// The site polygon's tightest enclosing rectangle — places the boundary label
+// at its north-east corner (7.2) and is the first-paint view before the
+// polygon itself has loaded (13.4).
 export const SITE_RECT = { w: 10.441, s: 57.35, e: 10.647, n: 57.566 } as const
 export const SITE_LABEL = 'Natura 2000 · DK00FX113 · Hirsholmene'
 
 // ---------------------------------------------------------------------------
-// View (section 7): centre, zoom, zoom range, and pan limits ≈ box + 30 km.
-// At 57.5° N, 30 km ≈ 0.27° latitude ≈ 0.50° longitude.
-// Zoom 10.3 rather than the spec's 11: the site is ~0.22° tall and at z11
-// its north tip and label fell off an ~830 px map (decided 15 Sept 2026).
+// View (sections 7 and 13.4): the initial view fits the site polygon's bounds
+// with this padding — never a fixed centre and zoom (v1, 16 Sept 2026). Zoom
+// range and pan limits ≈ box + 30 km stay; at 57.5° N, 30 km ≈ 0.27°
+// latitude ≈ 0.50° longitude.
 // ---------------------------------------------------------------------------
-export const INITIAL_VIEW = { center: [10.55, 57.46] as [number, number], zoom: 10.3 }
+export const FIT_PADDING_PX = 60
 export const ZOOM = { min: 9, max: 14 }
 export const MAX_BOUNDS: [[number, number], [number, number]] = [
   [BOX.w - 0.5, BOX.s - 0.27],

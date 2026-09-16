@@ -255,3 +255,43 @@ repeat cycle is exactly twelve days — so every gap is the same gap.
 Hirsholmene, at 57°N where the tracks converge, is covered from several
 tracks, morning and evening, which is why its median gap is 13 hours and
 its longest 5 days. The closing sentence (11.3) now states both figures.
+
+## 2026-09-16 · M10 · The map is created on the site's known rectangle, then fitted to the polygon
+
+Section 13.4 fits the initial view to the site polygon's bounds. The map
+is created before `site.geojson` has been read, so it opens on
+`SITE_RECT` — the same rectangle, as a constant — and re-fits to the
+bounds computed from the polygon the moment the data arrives. Nothing
+visible moves; the first paint is already right.
+
+## 2026-09-16 · M10 · Re-fit on window resize only, not when the inspector opens
+
+The inspector narrows the map by 340 px. Re-fitting then would slide the
+view out from under the dot the user has just clicked — the one thing
+they are looking at. The fit is recomputed on `window` resize only, as
+the section says; opening the inspector keeps the map's centre and zoom.
+
+## 2026-09-16 · M10 · The first-visit hint is per page load, not remembered
+
+"Disappears on the first map click and does not return" is read within
+one visit. It is not persisted to storage: the milestone's own test
+opens with "the hint shows", a reviewer reloading the page expects to
+see it again, and it costs nothing. The Layers card, by contrast, does
+remember its open state for the session (`sessionStorage`), as 13.4 asks.
+
+## 2026-09-16 · M10 · Arrow keys step scenes anywhere except inside a field
+
+`←` / `→` are listened for on the document so the stepper needs no
+focus. They are ignored while focus is in an input — the radius slider
+uses the same keys — and with a modifier held. The scene dropdown's
+`Esc` is caught before the inspector's, so one press closes the menu
+and a second clears the click.
+
+## 2026-09-16 · M10 · The radius slider is a slot in the verdict panel
+
+13.5 puts the slider after the verdict and GFW lines but before the
+"no contact" block, which is rendered inside `Verdict`. Rather than
+split that component, it takes the slider as `children` and places it
+at that point in both branches. `Verdict`, `Radius`, `Layers`,
+`SceneCounts` and `ScenePicker` otherwise keep their logic and markup;
+only their headings moved to the containers that now carry them.
