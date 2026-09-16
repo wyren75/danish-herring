@@ -8,11 +8,14 @@ import {
   type Snapshot,
   type Vessel,
 } from './lib/data'
-import type { SiteGeometry } from './lib/geo'
+import type { LonLat, SiteGeometry } from './lib/geo'
+import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
 import Layers from './panel/Layers'
+import Radius from './panel/Radius'
 import ScenePicker, { rankScenes } from './panel/ScenePicker'
+import VerdictPanel from './panel/Verdict'
 
 export const APP_NAME = 'Danish Herring'
 
@@ -29,6 +32,9 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Layer 3 is on by default (section 7 table).
   const [showRadar, setShowRadar] = useState(true)
+  // Click state (section 9): where the user clicked, and the matching radius.
+  const [click, setClick] = useState<LonLat | null>(null)
+  const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
 
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
   useEffect(() => {
@@ -39,7 +45,7 @@ export default function App() {
         const vessels = new Map(vesselRows.map((v) => [v.mmsi, v]))
         setData({ scenes, snapshots, vessels, site })
         // Open on the busiest scene so the map is never empty.
-        setSelectedId(rankScenes(scenes, snapshots, vessels, site)[0]?.scene.scene_id ?? null)
+        setSelectedId(rankScenes(scenes)[0]?.scene_id ?? null)
       })
       .catch((e: Error) => {
         if (cancelled) return
@@ -51,8 +57,8 @@ export default function App() {
     }
   }, [])
 
-  // The selected scene and its snapshots — what M3 pins the radar to and
-  // what M4 matches clicks against.
+  // The selected scene and its snapshots — what the radar is pinned to and
+  // what clicks are matched against.
   const scene = useMemo(
     () => data?.scenes.find((s) => s.scene_id === selectedId) ?? null,
     [data, selectedId],
@@ -62,11 +68,16 @@ export default function App() {
     [data, selectedId],
   )
 
-  useEffect(() => {
-    if (scene) console.log(`scene ${scene.scene_id}: ${sceneSnapshots.length} snapshots`)
-  }, [scene, sceneSnapshots])
+  // Selecting a scene clears any click state (section 8).
+  const selectScene = useCallback((id: string) => {
+    setSelectedId(id)
+    setClick(null)
+  }, [])
 
-  const selectScene = useCallback((id: string) => setSelectedId(id), [])
+  const verdict = useMemo(
+    () => (data && click ? computeVerdict(click, sceneSnapshots, radiusM, data.site) : null),
+    [data, click, sceneSnapshots, radiusM],
+  )
 
   return (
     <div className="app">
@@ -81,15 +92,10 @@ export default function App() {
           </p>
         ) : data ? (
           <>
-            <ScenePicker
-              scenes={data.scenes}
-              snapshots={data.snapshots}
-              vessels={data.vessels}
-              site={data.site}
-              selectedId={selectedId}
-              onSelect={selectScene}
-            />
+            <ScenePicker scenes={data.scenes} selectedId={selectedId} onSelect={selectScene} />
             <Layers showRadar={showRadar} onShowRadar={setShowRadar} />
+            <Radius radiusM={radiusM} onChange={setRadiusM} />
+            {scene && <VerdictPanel scene={scene} verdict={verdict} vessels={data.vessels} />}
           </>
         ) : (
           <>
@@ -99,7 +105,7 @@ export default function App() {
         )}
       </aside>
       <main className="map-area">
-        <MapView scene={scene} showRadar={showRadar} />
+        <MapView scene={scene} showRadar={showRadar} verdict={verdict} onClick={setClick} />
       </main>
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·

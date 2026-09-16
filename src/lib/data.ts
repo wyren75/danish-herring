@@ -15,6 +15,11 @@ export interface Scene {
   bbox_n: number
   n_positions: number
   n_vessels: number // vessels in the padded box, not the site
+  // Counted inside the site polygon at the acquisition instant, at ingestion
+  // (SPEC.md section 8). The browser reads these; it never recomputes them.
+  n_in_site: number
+  n_fishing_in_site: number
+  n_trawling_in_site: number
 }
 
 export interface Vessel {
@@ -58,8 +63,8 @@ async function fetchAll<T>(table: string, orderBy: string[]): Promise<T[]> {
 
 export const loadScenes = () => fetchAll<Scene>('scenes', ['acq_mid'])
 export const loadVessels = () => fetchAll<Vessel>('vessels', ['mmsi'])
-// ~1,100 rows across all 12 scenes: small enough to hold in memory, and the
-// scene picker needs every scene's snapshots to rank by fishing count.
+// ~1,400 rows across all 14 scenes: small enough to hold in memory, so
+// switching scene never waits on the network.
 export const loadSnapshots = () => fetchAll<Snapshot>('snapshots', ['scene_id', 'mmsi'])
 
 export async function loadSite(): Promise<SiteGeometry> {

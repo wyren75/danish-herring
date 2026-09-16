@@ -1,68 +1,42 @@
 import { useMemo } from 'react'
-import { isFishing, type Scene, type Snapshot, type Vessel } from '../lib/data'
-import { pointInPolygon, type SiteGeometry } from '../lib/geo'
+import type { Scene } from '../lib/data'
 import { utcDate, utcTime, utcTimeSeconds } from '../lib/format'
-
-interface SceneRow {
-  scene: Scene
-  nVessels: number // snapshots inside the site polygon
-  nFishing: number // ...of which ship_type = Fishing
-}
 
 interface Props {
   scenes: Scene[]
-  snapshots: Snapshot[]
-  vessels: Map<string, Vessel>
-  site: SiteGeometry
   selectedId: string | null
   onSelect: (sceneId: string) => void
 }
 
-// Counts use the SITE polygon, not the box: the box holds Frederikshavn
-// harbour and would make every scene look equally busy (SPEC.md section 8).
-export function rankScenes(
-  scenes: Scene[],
-  snapshots: Snapshot[],
-  vessels: Map<string, Vessel>,
-  site: SiteGeometry,
-): SceneRow[] {
-  const rows = new Map<string, SceneRow>(
-    scenes.map((scene) => [scene.scene_id, { scene, nVessels: 0, nFishing: 0 }]),
-  )
-  for (const s of snapshots) {
-    const row = rows.get(s.scene_id)
-    if (!row || !pointInPolygon(s.lon, s.lat, site)) continue
-    row.nVessels++
-    if (isFishing(vessels.get(s.mmsi))) row.nFishing++
-  }
-  // Busiest first; ties broken by date so the order is deterministic.
-  return [...rows.values()].sort(
-    (a, b) => b.nFishing - a.nFishing || a.scene.acq_mid.localeCompare(b.scene.acq_mid),
+// Counts are precomputed at ingestion inside the SITE polygon (SPEC.md
+// section 8): fishing vessels first, ties by trawling, then date so the
+// order is deterministic.
+export function rankScenes(scenes: Scene[]): Scene[] {
+  return [...scenes].sort(
+    (a, b) =>
+      b.n_fishing_in_site - a.n_fishing_in_site ||
+      b.n_trawling_in_site - a.n_trawling_in_site ||
+      a.acq_mid.localeCompare(b.acq_mid),
   )
 }
 
-// One dot per ~4 fishing vessels, up to four.
-const dots = (n: number) => '●'.repeat(Math.min(4, Math.ceil(n / 4)))
-
-export default function ScenePicker({
-  scenes,
-  snapshots,
-  vessels,
-  site,
-  selectedId,
-  onSelect,
-}: Props) {
-  const rows = useMemo(
-    () => rankScenes(scenes, snapshots, vessels, site),
-    [scenes, snapshots, vessels, site],
+// Activity glyph, up to four dots. Trawlers are counted twice — they are
+// fishing vessels that are also working — which reproduces the spec's
+// examples (6·4 → ●●●●, 5·4 → ●●●●, 7·0 → ●●●).
+const dots = (scene: Scene) =>
+  '●'.repeat(
+    Math.min(4, Math.round((scene.n_fishing_in_site + scene.n_trawling_in_site) / 2.5)),
   )
-  const selected = rows.find((r) => r.scene.scene_id === selectedId)?.scene
+
+export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
+  const rows = useMemo(() => rankScenes(scenes), [scenes])
+  const selected = rows.find((s) => s.scene_id === selectedId)
 
   return (
     <section>
       <h2>Scenes</h2>
       <ul className="scene-list">
-        {rows.map(({ scene, nVessels, nFishing }) => {
+        {rows.map((scene) => {
           const active = scene.scene_id === selectedId
           return (
             <li key={scene.scene_id}>
@@ -77,9 +51,9 @@ export default function ScenePicker({
                   <span className="scene-time">{utcTime(scene.acq_mid)}</span>
                 </span>
                 <span className="scene-counts">
-                  {nVessels} vessels · {nFishing} fishing
+                  {scene.n_fishing_in_site} fishing inside · {scene.n_trawling_in_site} trawling
                   <span className="scene-dots" aria-hidden="true">
-                    {dots(nFishing)}
+                    {dots(scene)}
                   </span>
                 </span>
               </button>

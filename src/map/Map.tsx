@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import type { Feature, FeatureCollection } from 'geojson'
 import 'maplibre-gl/dist/maplibre-gl.css'
 // MapLibre 6 ships its worker as a separate module and resolves it relative to
 // its own URL at runtime, which bundlers don't see. Let Vite bundle it and
 // tell MapLibre where it landed.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import type { Scene } from '../lib/data'
+import type { LonLat } from '../lib/geo'
+import type { Verdict } from '../lib/verdict'
 import { s1TileUrl } from '../lib/wms'
 import {
   BASEMAP,
@@ -24,11 +27,37 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl)
 interface Props {
   scene: Scene | null
   showRadar: boolean
+  verdict: Verdict | null
+  onClick: (lonLat: LonLat) => void
 }
 
-export default function Map({ scene, showRadar }: Props) {
+const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
+
+// Layer 7 data: the click marker, and a thin line to the matched snapshot.
+function clickFeatures(verdict: Verdict | null): FeatureCollection {
+  if (!verdict) return EMPTY
+  const features: Feature[] = [
+    { type: 'Feature', geometry: { type: 'Point', coordinates: verdict.click }, properties: {} },
+  ]
+  if (verdict.matched && verdict.nearest) {
+    const { lon, lat } = verdict.nearest.snapshot
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: [verdict.click, [lon, lat]] },
+      properties: {},
+    })
+  }
+  return { type: 'FeatureCollection', features }
+}
+
+export default function Map({ scene, showRadar, verdict, onClick }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  // The map is created once; the handler it calls must always be the latest.
+  const onClickRef = useRef(onClick)
+  useEffect(() => {
+    onClickRef.current = onClick
+  }, [onClick])
   // Set once the style and our static layers are in; scene-driven layers
   // can only be added after that.
   const [ready, setReady] = useState(false)
@@ -111,8 +140,33 @@ export default function Map({ scene, showRadar }: Props) {
         },
       })
 
+      // Layer 7: click marker + match line, on top of everything. The source
+      // stays; its data is replaced on every click.
+      map.addSource(IDS.click, { type: 'geojson', data: EMPTY })
+      map.addLayer({
+        id: IDS.clickLine,
+        type: 'line',
+        source: IDS.click,
+        filter: ['==', ['geometry-type'], 'LineString'],
+        paint: { 'line-color': COLORS.text, 'line-width': 1.5 },
+      })
+      map.addLayer({
+        id: IDS.clickMarker,
+        type: 'circle',
+        source: IDS.click,
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: {
+          'circle-radius': 8,
+          'circle-opacity': 0,
+          'circle-stroke-color': COLORS.text,
+          'circle-stroke-width': 2,
+        },
+      })
+
       setReady(true)
     })
+
+    map.on('click', (e) => onClickRef.current([e.lngLat.lng, e.lngLat.lat]))
 
     return () => {
       map.remove()
@@ -150,6 +204,13 @@ export default function Map({ scene, showRadar }: Props) {
     if (!map || !ready || !map.getLayer(IDS.s1)) return
     map.setLayoutProperty(IDS.s1, 'visibility', showRadar ? 'visible' : 'none')
   }, [ready, scene, showRadar])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return
+    const source = map.getSource(IDS.click) as maplibregl.GeoJSONSource | undefined
+    source?.setData(clickFeatures(verdict))
+  }, [ready, verdict])
 
   return (
     <>

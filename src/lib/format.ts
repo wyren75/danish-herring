@@ -27,3 +27,12 @@ export const utcDate = (iso: string) => date.format(new Date(iso))
 export const utcTime = (iso: string) => `${hm.format(new Date(iso))} UTC`
 /** "05:32:14 UTC" */
 export const utcTimeSeconds = (iso: string) => `${hms.format(new Date(iso))} UTC`
+
+const int = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
+
+/** "1,240 m" */
+export const metres = (m: number) => `${int.format(Math.round(m))} m`
+
+/** "57.4412 N, 10.5537 E" */
+export const latLon = (lat: number, lon: number) =>
+  `${Math.abs(lat).toFixed(4)} ${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon).toFixed(4)} ${lon < 0 ? 'W' : 'E'}`

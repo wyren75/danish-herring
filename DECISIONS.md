@@ -45,3 +45,19 @@ the morning pass that a whole-day query would have shown.
 Compared `IW_VV` and `IW_VV_DB` by eye as section 6.2 suggests. Kept
 `IW_VV`: near-black sea and saturated hulls read better for the click-blind
 use of the app. `IW_VV_DB` remains available by changing one value in `.env`.
+
+## 2026-09-16 · M4 · Scene picker follows the section 8 sort rule, not its example
+
+Section 8 says sort by `n_fishing_in_site` descending, ties by
+`n_trawling_in_site`, then date — but its example rows list 02 Sep (6·4)
+above 31 Aug (7·0). The rule is what the code does: 31 Aug, 7 fishing
+inside, ranks first and opens by default. The activity dots the spec shows
+but does not define are `round((fishing + trawling) / 2.5)`, capped at four:
+trawlers count twice, which reproduces the three example rows exactly.
+
+## 2026-09-16 · M4 · Verdict scrolls into view
+
+With fourteen scenes the verdict section sits below the panel's fold on a
+typical desktop, so a click on the map would answer out of sight. The verdict
+section calls `scrollIntoView({ block: 'nearest' })` when a verdict appears.
+No layout change; section 13's order (scenes, layers, radius, verdict) stands.

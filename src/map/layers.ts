@@ -40,6 +40,7 @@ export const MAX_BOUNDS: [[number, number], [number, number]] = [
 export const COLORS = {
   accent: '#f5a524',
   bg: '#0b0e14',
+  text: '#e6e8ee',
 }
 
 // Layer / source ids, so other modules can insert layers in the right order
@@ -49,6 +50,9 @@ export const IDS = {
   s1: 's1',
   site: 'site',
   siteLabel: 'site-label',
+  click: 'click', // layer 7: one source, a line layer and a marker layer
+  clickLine: 'click-line',
+  clickMarker: 'click-marker',
 }
 
 export const S1_ATTRIBUTION = 'Contains modified Copernicus Sentinel data'
