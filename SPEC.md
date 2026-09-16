@@ -464,13 +464,22 @@ are blobs that encode nothing.
 | Vessel | Colour |
 |---|---|
 | `ship_type = Fishing` | orange |
-| anything else | light grey |
+| anything else | light blue `#4fb3ff` |
 | inside the site polygon | add a 2 px white ring |
 | **the matched vessel** | **always drawn, even with the AIS layer hidden** — larger, white outline, so the match line from the click ends on a symbol, not in open water |
 
 The gap between a bright radar dot and its AIS marker is expected and
 informative (section 9.4): moored vessels sit almost on their dot, moving
 ones are displaced along the satellite's track. Do not "correct" it.
+
+**Legend** (added 16 Sept): a collapsible block at the bottom of the Layers
+section, closed by default, titled *Symbols*. One line each: orange triangle
+— fishing vessel under way; orange dot — fishing vessel stopped; blue —
+any other vessel; white ring — inside the protected site; large with white
+edge — your match. Nothing else.
+
+Non-fishing colour is light blue `#4fb3ff` (changed from grey at M5b — grey
+vanished over bright harbour clutter).
 
 Hidden by default — **this is the point of the app.** The user should look at
 the radar first and click blind. Two controls in the panel: *Show AIS* toggle
