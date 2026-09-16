@@ -51,11 +51,12 @@ type SiteCode = (typeof SITES)[number]['code']
 
 // Fixed copy (11.3).
 const CLOSING =
-  'In the Kattegat, a vessel cannot work unseen: radar passes almost daily, AIS is ' +
-  'received by shore stations, and trawling inside the protected area continues — ' +
-  'legally. Observation is not the constraint; enforcement is. In the Bijagós, a ' +
-  'UNESCO World Heritage site, radar passes every four to seven days and no AIS ' +
-  'receiver exists within 400 km. Observation itself is the gap. Two protected ' +
+  'In the Kattegat, a vessel cannot work unseen for long: radar passes on average ' +
+  'every 1.7 days from several tracks, morning and evening, AIS is received by shore ' +
+  'stations, and trawling inside the protected area continues — legally. Observation ' +
+  'is not the constraint; enforcement is. In the Bijagós, a UNESCO World Heritage ' +
+  'site, one satellite on one track images the core once every twelve days, and no ' +
+  'AIS receiver exists within 400 km. Observation itself is the gap. Two protected ' +
   'sites, two different failures — and only one of them is a problem that better ' +
   'sensors can fix.'
 

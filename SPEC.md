@@ -466,7 +466,7 @@ are blobs that encode nothing.
 | Vessel | Colour |
 |---|---|
 | `ship_type = Fishing` | orange |
-| anything else | light blue `#4fb3ff` |
+| anything else | light grey |
 | inside the site polygon | add a 2 px white ring |
 | **the matched vessel** | **always drawn, even with the AIS layer hidden** — larger, white outline, so the match line from the click ends on a symbol, not in open water |
 
@@ -733,13 +733,19 @@ still well above 50% unseen at N=4. That contrast is the argument.
 
 ### 11.3 The sentence under the chart — fixed copy
 
-> *In the Kattegat, a vessel cannot work unseen: radar passes almost daily,
-> AIS is received by shore stations, and trawling inside the protected area
+> *In the Kattegat, a vessel cannot work unseen for long: radar passes on
+> average every 1.7 days from several tracks, morning and evening, AIS is
+> received by shore stations, and trawling inside the protected area
 > continues — legally. Observation is not the constraint; enforcement is. In
-> the Bijagós, a UNESCO World Heritage site, radar passes every four to seven
-> days and no AIS receiver exists within 400 km. Observation itself is the
-> gap. Two protected sites, two different failures — and only one of them is
-> a problem that better sensors can fix.*
+> the Bijagós, a UNESCO World Heritage site, one satellite on one track
+> images the core once every twelve days, and no AIS receiver exists within
+> 400 km. Observation itself is the gap. Two protected sites, two different
+> failures — and only one of them is a problem that better sensors can fix.*
+
+(Figures updated 16 Sept from the footprint-verified passes: 209 vs 31; at
+N=4, 9% vs 66% unseen. The Bijagós median and longest gap are both exactly
+12.0 days — the Sentinel-1 repeat cycle — which is what "one track, one
+satellite" looks like in data.)
 
 ---
 

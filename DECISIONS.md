@@ -246,3 +246,12 @@ requests. The slider opens at N = 4, the milestone's own test case.
 
 One more 300-byte fetch alongside the others, rather than a loader inside
 the tab. It is used only for the inset (section 5.2).
+
+## 2026-09-16 · M8b · Bijagós median and longest gap are both 12.0 days: the Sentinel-1 repeat cycle
+
+Not a coincidence in the data. Every Sentinel-1 pass over the Bijagós core
+in the year comes from one satellite on one orbit track, and Sentinel-1's
+repeat cycle is exactly twelve days — so every gap is the same gap.
+Hirsholmene, at 57°N where the tracks converge, is covered from several
+tracks, morning and evening, which is why its median gap is 13 hours and
+its longest 5 days. The closing sentence (11.3) now states both figures.
