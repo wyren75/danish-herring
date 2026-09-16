@@ -139,11 +139,21 @@ def main():
         vessels_all.add(v.get("ssvid"))
         flags[v.get("flag") or "?"] += 1
 
+        bb = e.get("boundingBox") or [None, None, None, None]
+        try:
+            bb = [float(v) for v in bb]
+            # GFW does not guarantee west < east; ~half the rows are swapped.
+            bb = [min(bb[0], bb[2]), min(bb[1], bb[3]),
+                  max(bb[0], bb[2]), max(bb[1], bb[3])]
+        except (TypeError, ValueError):
+            bb = [None, None, None, None]
+
         rows.append({
             "event_id": e.get("id"),
             "start": e.get("start"),
             "end": e.get("end"),
             "lat": lat, "lon": lon,
+            "bbox_w": bb[0], "bbox_s": bb[1], "bbox_e": bb[2], "bbox_n": bb[3],
             "inside_site": in_site,
             "mmsi": v.get("ssvid"),
             "vessel_name": v.get("name"),
@@ -171,6 +181,10 @@ def main():
   "end"          timestamptz,
   lat            double precision,
   lon            double precision,
+  bbox_w         double precision,
+  bbox_s         double precision,
+  bbox_e         double precision,
+  bbox_n         double precision,
   inside_site    boolean,
   mmsi           text,
   vessel_name    text,
