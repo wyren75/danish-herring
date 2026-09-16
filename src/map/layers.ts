@@ -39,7 +39,7 @@ export const MAX_BOUNDS: [[number, number], [number, number]] = [
 
 export const COLORS = {
   accent: '#f5a524', // fishing vessels and the site outline
-  grey: '#c4c8d2', // every other vessel (7.3)
+  other: '#4fb3ff', // every other vessel — light blue (owner's call, M5b)
   white: '#ffffff', // in-site ring and the matched vessel's outline
   bg: '#0b0e14',
   text: '#e6e8ee',

@@ -198,13 +198,13 @@ export default function Map({
       })
 
       // Layer 6: AIS snapshots (7.3). Triangles rotated to cog for moving
-      // vessels, dots for the rest; orange if fishing, grey otherwise; a white
+      // vessels, dots for the rest; orange if fishing, blue otherwise; a white
       // ring inside the site; the matched vessel larger with a white outline.
       // The source stays; its data is replaced per scene and per verdict.
       map.addImage(IDS.aisIcon, triangleIcon(), { sdf: true, pixelRatio: ICON_PIXEL_RATIO })
       map.addSource(IDS.ais, { type: 'geojson', data: EMPTY_AIS })
       const fill: maplibregl.ExpressionSpecification = [
-        'case', ['get', 'fishing'], COLORS.accent, COLORS.grey,
+        'case', ['get', 'fishing'], COLORS.accent, COLORS.other,
       ]
       const ring: maplibregl.ExpressionSpecification = [
         'case', ['any', ['get', 'matched'], ['get', 'inSite']], 2, 0,

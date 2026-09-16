@@ -101,3 +101,9 @@ Section 9.2's list plus the others that occur in `snapshots` (Liberia,
 Marshall Islands, Bahamas, Malta, Cyprus, Portugal, Greece, Panama,
 Singapore, Antigua, Barbados, Seychelles, Falklands, Finland, Ireland,
 Italy). Anything else still shows the three digits.
+
+## 2026-09-16 · M5b · Non-fishing markers are light blue, not grey
+
+Section 7.3 said light grey. Grey dots were invisible over the bright
+harbour clutter in the radar image, so the owner chose `#4fb3ff`. Fishing
+stays orange; the white in-site ring rule is unchanged.
