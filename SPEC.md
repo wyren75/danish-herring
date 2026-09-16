@@ -299,10 +299,12 @@ scene_id, mmsi, lat, lon, sog, cog, method, dt_before_s, dt_after_s
 
 `gfw_fishing_events` — Global Fishing Watch apparent-fishing events
 ```
-event_id, start, end, lat, lon, inside_site, mmsi, vessel_name, flag,
-gfw_vessel_id, avg_speed_kn, distance_km, dist_port_km, dist_shore_km,
-mpa_tags, site_code
+event_id, start, end, lat, lon, bbox_w, bbox_s, bbox_e, bbox_n,
+inside_site, mmsi, vessel_name, flag, gfw_vessel_id, avg_speed_kn,
+distance_km, dist_port_km, dist_shore_km, mpa_tags, site_code
 ```
+`bbox_*` (added 16 Sept) is the rectangle the vessel stayed inside during the
+event — the honest shape to draw for a multi-hour activity.
 
 `satellite_passes` — for the Observation tab (produced by `ingest_passes.py`)
 ```
@@ -464,7 +466,7 @@ are blobs that encode nothing.
 | Vessel | Colour |
 |---|---|
 | `ship_type = Fishing` | orange |
-| anything else | light blue `#4fb3ff` |
+| anything else | light grey |
 | inside the site polygon | add a 2 px white ring |
 | **the matched vessel** | **always drawn, even with the AIS layer hidden** — larger, white outline, so the match line from the click ends on a symbol, not in open water |
 
@@ -606,35 +608,89 @@ time):
 
 ---
 
-## 10. Confidence ratio
+## 10. Two sources at the instant — replaces the confidence ratio
 
-Shown once per scene, in the panel header, and repeated under every verdict.
+**Superseded on 16 September.** The ratio was designed for volunteer AIS
+with reception holes. The Danish Maritime Authority's shore network is the
+official record; measuring its "coverage" against GFW's sparser satellite
+feed is near-100% by construction, and with the strict at-the-instant rule
+only one scene in fourteen was even measurable. The word *coverage* and the
+phrase *"fewer than 3 reference vessels"* were both misleading. Removed.
 
-```
-gfw_here = gfw_fishing_events where
-             start <= acq_mid <= end
-             and inside_site = true          (or inside the box; owner's call, default: site)
-gfw_mmsi = distinct mmsi of gfw_here
-found    = count of gfw_mmsi present in snapshots for this scene
-ratio    = found / |gfw_mmsi|
-```
+### 10.1 Per scene — two independent counts, no ratio
 
-Display:
+Shown once under the scene details (where M6 placed the old line):
 
 ```
-AIS coverage for this scene: 94%
-16 of 17 vessels that Global Fishing Watch recorded as fishing here at this
-moment appear in the Danish AIS record.
+At 05:31 UTC inside the site
+  Danish AIS      6 fishing vessels
+  Global Fishing  2 in a recorded fishing event
 ```
 
-If `|gfw_mmsi| < 3`: display *"AIS coverage: not measurable for this scene
-(fewer than 3 GFW reference vessels)."* Never show a ratio computed from one
-or two vessels.
+```
+danish = snapshots for scene, inside site polygon, vessels.ship_type = Fishing
+gfw    = gfw_fishing_events where start <= acq_mid <= end and inside_site
+```
 
-What this measures, stated in the UI's (i) tooltip: *agreement between two
-independent AIS sources — Denmark's shore network and GFW's satellite feed —
-not absolute truth. A low figure means apparent dark vessels here are likely
-reception gaps.*
+Always displayable. Zero is a result, not an error. The (i) tooltip:
+
+> *Two independent records of the same moment. The Danish figure is every
+> fishing vessel broadcasting AIS inside the boundary, received by shore
+> stations. The GFW figure is how many of those were, at that second, inside
+> a fishing event that Global Fishing Watch's classifier recognised from its
+> satellite AIS. GFW sees fewer because it counts only sustained, recognised
+> fishing behaviour, from a sparser feed.*
+
+The "no contact" explanatory block (section 9.3) must no longer point to a
+confidence figure. Replace its last sentence with: *"The AIS here is the
+Danish Maritime Authority's official shore network; a missing contact most
+likely means the vessel was not broadcasting, or what you clicked is not a
+vessel."*
+
+### 10.2 Per matched vessel — what GFW says it did (M6b)
+
+When a vessel is matched, query `gfw_fishing_events` for that MMSI:
+
+**Around the pass** — events whose window overlaps `acq_mid ± 6 h`:
+
+```
+Transiting at 17:01 UTC.
+GFW recorded this vessel fishing 17:42 → 21:15, 6 km north-east.
+```
+or
+```
+GFW fishing event in progress since 03:50 UTC (1 h 41 min so far).
+```
+or, if none: *"No GFW fishing event within 6 hours of this pass."*
+
+(±6 h, not ±90 min: the fleet leaves harbour 17:00–18:00 and fishes through
+the night, so an evening-pass vessel's event often starts two or three hours
+later; a morning-pass trawler's event began around 02:00–03:00. The line
+shows the actual times, so a wide window is not misleading.)
+
+**History** — all events for the MMSI in the table:
+
+```
+GFW: 23 fishing events for this vessel in 18 months · 9 inside the site.
+```
+
+Both lines sit in the matched panel under the offset. Distance is from the
+snapshot to the event's centre point; direction as an 8-point compass.
+
+### 10.3 The GFW layer — rectangles, not squares (M6b)
+
+Replace the point squares with each event's **bounding box** (`bbox_w/s/e/n`,
+added to the table 16 Sept): a thin dashed orange rectangle, no fill, with
+the small square kept at the centre. Tooltip unchanged. This says honestly
+*"this vessel fished somewhere in here for 4.3 h."*
+
+When a vessel is matched, **its** events within ±6 h are drawn even if
+the layer is off — same rule as the matched marker — so the story in 10.2
+is visible on the map. This is the default experience: layer off, nothing
+from GFW on the map until a vessel is matched, then only that vessel's
+events. Ticking the layer is the opt-in "show me everything" view; when it
+is on and a vessel is matched, draw that vessel's rectangles at full
+opacity and the rest at ~40% so they stand apart.
 
 ---
 
@@ -699,7 +755,8 @@ Each milestone is one session. **Done when** is the acceptance test.
 | **M3** | Sentinel-1 WMS layer pinned to the selected scene (section 7.1). Toggle. | Changing scene changes the radar image; bright dots visible on black water; the URL in the network tab contains the two-minute `TIME` window. |
 | **M4** | Click → nearest snapshot → matched / unmatched panels (section 9). Radius slider. Match line. In-site flag. | Clicking a bright dot inside the boundary yields a plausible vessel; clicking open water yields unmatched with nearest-vessel distance; moving the slider flips a borderline case. |
 | **M5** | AIS layer (hidden by default), Show AIS toggle, Reveal all, marker click shortcut. Flag lookup. Offset tooltip. | With AIS hidden, a blind click on a bright dot matches; Reveal shows the marker under it. |
-| **M6** | GFW fishing events layer and the confidence ratio (section 10). | The panel header shows a ratio with the "n of m" sentence, or the "not measurable" message, per scene. |
+| **M6** | GFW fishing events layer and the confidence ratio (section 10 as originally written). | Built 16 Sept; ratio then superseded. |
+| **M6b** | Section 10 as rewritten: two-count line per scene (10.1), per-vessel GFW context and history (10.2), event bounding-box rectangles and matched-vessel events always drawn (10.3). Reword the 9.3 block. | Matching a vessel on the 31 Aug scene shows a "GFW recorded this vessel fishing …" line and a dashed rectangle appears on the map; the scene line reads two counts with no percentage. |
 | **M7** | Optional Sentinel-2 layer, enabled only when a clear pass exists near the scene date. | For a May/June scene the S2 toggle is active and shows a photo; for a February scene it is disabled with a tooltip saying why. |
 | **M8** | Observation tab (section 11) with both sites, timeline strips, headline numbers, N-day slider. | Slider at N=4 shows near 0% for Hirsholmene and a clearly higher figure for Bijagós; numbers match `PROJECT_CONTEXT.md`. |
 | **M9** | README, DECISIONS.md, attribution footer, favicon, 60–90 s screen recording. | A stranger can read the README in two minutes and open the live link. |
