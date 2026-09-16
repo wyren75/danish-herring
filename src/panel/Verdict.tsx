@@ -4,7 +4,6 @@ import { duration, kilometres, latLon, metres, utcTime, utcTimeSeconds } from '.
 import { midFlag } from '../lib/geo'
 import { AROUND_PASS_H, history, relateEvent } from '../lib/gfw'
 import type { Verdict } from '../lib/verdict'
-import { MOVING_KN } from '../map/ais'
 import Tip from './Tip'
 
 interface Props {
@@ -158,16 +157,25 @@ function Matched({
       <p className="has-tip">
         Offset from your click: {metres(nearest.distanceM)} <Tip text={OFFSET_TIP} />
       </p>
-      <GfwContext snapshot={s} scene={scene} around={matchedEvents} events={events} />
       <InSite verdict={verdict} />
+      <GfwSection snapshot={s} scene={scene} around={matchedEvents} events={events} />
       {children}
     </>
   )
 }
 
-// What GFW says the matched vessel did (10.2): its events around the pass,
-// then its whole history in the table. Both under the offset.
-function GfwContext({
+// What GFW is and what its rectangles mean, fixed copy (13.8).
+const GFW_TIP =
+  'Global Fishing Watch classifies fishing from its own satellite AIS and publishes ' +
+  'each episode as an event with a start, an end, and the rectangle the vessel stayed ' +
+  'inside. The dashed rectangles on the map are those areas — not tracks, which GFW ' +
+  'does not publish. GFW sees fewer vessels than the Danish shore network and only ' +
+  'counts sustained, recognised fishing behaviour.'
+
+// What GFW says the matched vessel did (10.2), as a titled section with three
+// fixed labels (13.8): at the pass, around the pass, history. Each line is a
+// fact or a plain "none".
+function GfwSection({
   snapshot,
   scene,
   around,
@@ -178,41 +186,41 @@ function GfwContext({
   around: GfwEvent[]
   events: GfwEvent[]
 }) {
-  const now = utcTime(scene.acq_mid)
   const related = around.map((e) => relateEvent(e, snapshot, scene))
   const current = related.find((r) => r.inProgress)
   const others = related.filter((r) => !r.inProgress)
   const h = history(events, snapshot.mmsi)
-  // "Transiting" is the spec's word for a vessel not in an event; a vessel
-  // below steerage way is stopped, not transiting.
-  const state = snapshot.sog != null && snapshot.sog < MOVING_KN ? 'Stopped' : 'Transiting'
   return (
-    <div className="gfw-context">
-      {current ? (
-        <p>
-          GFW fishing event in progress since {utcTime(current.event.start)} (
-          {duration(current.elapsedMs)} so far).
-        </p>
-      ) : related.length ? (
-        <p>
-          {state} at {now}.
-        </p>
-      ) : (
-        <p>No GFW fishing event within {AROUND_PASS_H} hours of this pass.</p>
-      )}
-      {others.map((r) => (
-        <p key={r.event.event_id}>
-          GFW recorded this vessel fishing {utcTime(r.event.start).replace(' UTC', '')} →{' '}
-          {utcTime(r.event.end)}, {kilometres(r.distanceM)} {r.compass}.
-        </p>
-      ))}
-      <p className="muted">
-        GFW:{' '}
-        {h.total
-          ? `${h.total} fishing ${h.total === 1 ? 'event' : 'events'} for this vessel in ${h.spanMonths} months · ${h.insideSite} inside the site.`
-          : `no fishing events for this vessel in ${h.spanMonths} months.`}
-      </p>
-    </div>
+    <section className="gfw-section">
+      <h3 className="has-tip">
+        Global Fishing Watch <Tip text={GFW_TIP} />
+      </h3>
+      <dl className="gfw-lines">
+        <dt>At the pass</dt>
+        <dd>
+          {current
+            ? `Fishing event in progress since ${utcTime(current.event.start)} (${duration(current.elapsedMs)})`
+            : 'No fishing event in progress'}
+        </dd>
+        <dt>Around the pass</dt>
+        <dd>
+          {others.length
+            ? others.map((r) => (
+                <span key={r.event.event_id}>
+                  Fished {utcTime(r.event.start).replace(' UTC', '')} → {utcTime(r.event.end)},{' '}
+                  {kilometres(r.distanceM)} {r.compass}
+                </span>
+              ))
+            : `None within ${AROUND_PASS_H} h`}
+        </dd>
+        <dt>History</dt>
+        <dd>
+          {h.total
+            ? `${h.total} fishing ${h.total === 1 ? 'event' : 'events'} in ${h.spanMonths} months · ${h.insideSite} inside the site`
+            : `None in ${h.spanMonths} months`}
+        </dd>
+      </dl>
+    </section>
   )
 }
 

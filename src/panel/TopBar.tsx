@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import type { Scene } from '../lib/data'
-import { utcTimeSeconds } from '../lib/format'
 import SceneStepper from './SceneStepper'
 
 interface Props {
@@ -9,14 +8,15 @@ interface Props {
   scene: Scene | null
   onSelect: (sceneId: string) => void
   tabs: ReactNode
-  // The two-count line (10.1) for the second row; null while loading.
+  // The one-sentence second row (10.1 as worded in 13.8); null while loading.
   counts: ReactNode
   loadError: string | null
 }
 
 // The top bar (13.3): setup. Row 1 — title, the scene stepper, the tabs.
-// Row 2 — the selected scene's product name, its acquisition instant and
-// the two counts at that instant, in one muted line.
+// Row 2 — the acquisition instant and the two counts at it, as one sentence.
+// The product name is not here (13.8): it is the stepper's tooltip and the
+// inspector's footer.
 export default function TopBar({ title, scenes, scene, onSelect, tabs, counts, loadError }: Props) {
   return (
     <header className="topbar">
@@ -32,15 +32,7 @@ export default function TopBar({ title, scenes, scene, onSelect, tabs, counts, l
             Could not load data: {loadError}
           </span>
         ) : scene ? (
-          <>
-            <code className="scene-product" title={scene.product_name}>
-              {scene.product_name}
-            </code>
-            <span className="topbar-sep">·</span>
-            <span>acquired {utcTimeSeconds(scene.acq_mid)} — AIS interpolated to this second</span>
-            <span className="topbar-sep">·</span>
-            {counts}
-          </>
+          counts
         ) : (
           <span>Loading…</span>
         )}

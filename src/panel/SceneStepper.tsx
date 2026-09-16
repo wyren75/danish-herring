@@ -15,7 +15,8 @@ const inField = (t: EventTarget | null) =>
 
 // The scene stepper (13.3): ◀, the current scene in the section-8 row
 // format, ▶. The text is a button that drops the full ScenePicker list
-// down; ← / → step through the same order. The user chooses once.
+// down; ← / → step through the same order. The user chooses once. Its
+// tooltip is the product name — the exact image's identifier (13.8).
 export default function SceneStepper({ scenes, selectedId, onSelect }: Props) {
   const rows = useMemo(() => rankScenes(scenes), [scenes])
   const index = rows.findIndex((s) => s.scene_id === selectedId)
@@ -78,6 +79,7 @@ export default function SceneStepper({ scenes, selectedId, onSelect }: Props) {
         aria-haspopup="listbox"
         aria-expanded={open}
         disabled={!scene}
+        title={scene?.product_name}
         onClick={() => setOpen((o) => !o)}
       >
         {scene ? (

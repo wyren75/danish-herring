@@ -67,7 +67,7 @@ export interface EventRelation {
   inProgress: boolean // the instant falls inside the event
   elapsedMs: number // since the event started, when in progress
   distanceM: number // from the snapshot to the event's centre point
-  compass: string // 8-point, "north-east"
+  compass: string // 8-point, abbreviated: "NE"
 }
 
 export function relateEvent(event: GfwEvent, snapshot: Snapshot, scene: Scene): EventRelation {
@@ -82,7 +82,7 @@ export function relateEvent(event: GfwEvent, snapshot: Snapshot, scene: Scene): 
   }
 }
 
-const POINTS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west']
+const POINTS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
 // Initial bearing from a to b, snapped to eight points. Longitude is scaled
 // by cos(lat) so a degree east is not stretched against a degree north.

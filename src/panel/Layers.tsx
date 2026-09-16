@@ -76,8 +76,9 @@ export default function Layers({
   )
 }
 
-// The Symbols legend (7.3): collapsible, closed by default, five lines and
-// nothing else. Glyphs are inline SVG drawn to match the map markers.
+// The Symbols legend (7.3, worded in 13.8): collapsible, closed by default,
+// six lines — a glyph and a label of at most four words, nothing else.
+// Glyphs are inline SVG drawn to match the map markers.
 function Legend() {
   return (
     <details className="legend">
@@ -87,25 +88,25 @@ function Legend() {
           <Glyph>
             <polygon points="8,3 11.5,13 4.5,13" fill={COLORS.accent} />
           </Glyph>
-          orange triangle — fishing vessel under way
+          Fishing vessel, under way
         </li>
         <li>
           <Glyph>
             <circle cx="8" cy="8" r="3" fill={COLORS.accent} />
           </Glyph>
-          orange dot — fishing vessel stopped
+          Fishing vessel, stopped
         </li>
         <li>
           <Glyph>
             <polygon points="8,3 11.5,13 4.5,13" fill={COLORS.other} />
           </Glyph>
-          blue — any other vessel
+          Other vessel
         </li>
         <li>
           <Glyph>
             <circle cx="8" cy="8" r="3" fill={COLORS.accent} stroke={COLORS.white} strokeWidth="2" />
           </Glyph>
-          white ring — inside the protected site
+          Inside the protected site
         </li>
         <li>
           <Glyph>
@@ -117,7 +118,23 @@ function Legend() {
               strokeLinejoin="round"
             />
           </Glyph>
-          large with white edge — your match
+          Your match
+        </li>
+        <li>
+          <Glyph>
+            <rect
+              x="1.5"
+              y="3.5"
+              width="13"
+              height="9"
+              fill="none"
+              stroke={COLORS.accent}
+              strokeWidth="1.5"
+              strokeDasharray="3 2"
+            />
+            <rect x="7" y="7" width="2" height="2" fill={COLORS.accent} />
+          </Glyph>
+          GFW fishing event area
         </li>
       </ul>
     </details>
