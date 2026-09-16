@@ -49,6 +49,7 @@ export const COLORS = {
 // (section 7 table: basemap → S2 → S1 → site → GFW → AIS → click marker).
 // Everything of ours goes on top of the basemap style's own layers.
 export const IDS = {
+  s2: 's2', // layer 2: optical, only when a clear pass exists near the scene
   s1: 's1',
   site: 'site',
   siteLabel: 'site-label',
@@ -64,4 +65,5 @@ export const IDS = {
   clickMarker: 'click-marker',
 }
 
-export const S1_ATTRIBUTION = 'Contains modified Copernicus Sentinel data'
+// Both Sentinel layers carry the same notice.
+export const SENTINEL_ATTRIBUTION = 'Contains modified Copernicus Sentinel data'

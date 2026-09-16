@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   loadGfwEvents,
+  loadPasses,
   loadScenes,
   loadSite,
   loadSnapshots,
   loadVessels,
   type GfwEvent,
+  type SatellitePass,
   type Scene,
   type Snapshot,
   type Vessel,
 } from './lib/data'
 import type { LonLat, SiteGeometry } from './lib/geo'
 import { eventsAroundPass, eventsOnSceneDay } from './lib/gfw'
+import { clearS2Pass, type S2Pick } from './lib/s2'
 import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
 import { aisFeatures, EMPTY_AIS } from './map/ais'
 import { EMPTY_GFW, gfwFeatures } from './map/gfw'
@@ -30,8 +33,11 @@ interface Data {
   snapshots: Snapshot[]
   vessels: Map<string, Vessel>
   events: GfwEvent[]
+  passes: SatellitePass[]
   site: SiteGeometry
 }
+
+const NO_S2: S2Pick = { pass: null, best: null }
 
 export default function App() {
   const [data, setData] = useState<Data | null>(null)
@@ -39,6 +45,9 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   // Layer 3 is on by default (section 7 table).
   const [showRadar, setShowRadar] = useState(true)
+  // Layer 2 is off by default and only offered when a clear Sentinel-2 pass
+  // exists within a day of the scene (section 7).
+  const [showS2, setShowS2] = useState(false)
   // Layer 6 is off by default — the user looks at the radar first (7.3).
   const [showAis, setShowAis] = useState(false)
   // Layer 5 is context, not the subject — also off (7.4).
@@ -51,11 +60,18 @@ export default function App() {
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
   useEffect(() => {
     let cancelled = false
-    Promise.all([loadScenes(), loadSnapshots(), loadVessels(), loadGfwEvents(), loadSite()])
-      .then(([scenes, snapshots, vesselRows, events, site]) => {
+    Promise.all([
+      loadScenes(),
+      loadSnapshots(),
+      loadVessels(),
+      loadGfwEvents(),
+      loadPasses(),
+      loadSite(),
+    ])
+      .then(([scenes, snapshots, vesselRows, events, passes, site]) => {
         if (cancelled) return
         const vessels = new Map(vesselRows.map((v) => [v.mmsi, v]))
-        setData({ scenes, snapshots, vessels, events, site })
+        setData({ scenes, snapshots, vessels, events, passes, site })
         // Open on the busiest scene so the map is never empty.
         setSelectedId(rankScenes(scenes)[0]?.scene_id ?? null)
       })
@@ -79,6 +95,9 @@ export default function App() {
     () => (data && selectedId ? data.snapshots.filter((s) => s.scene_id === selectedId) : []),
     [data, selectedId],
   )
+
+  // The Sentinel-2 pass the scene may show, if a clear one is within a day.
+  const s2 = useMemo(() => (data && scene ? clearS2Pass(data.passes, scene) : NO_S2), [data, scene])
 
   // Selecting a scene clears any click state (section 8).
   const selectScene = useCallback((id: string) => {
@@ -146,6 +165,10 @@ export default function App() {
             <Layers
               showRadar={showRadar}
               onShowRadar={setShowRadar}
+              scene={scene}
+              s2={s2}
+              showS2={showS2}
+              onShowS2={setShowS2}
               showAis={showAis}
               onShowAis={setShowAis}
               onReveal={reveal}
@@ -174,6 +197,8 @@ export default function App() {
         <MapView
           scene={scene}
           showRadar={showRadar}
+          s2Pass={s2.pass}
+          showS2={showS2}
           gfw={gfw}
           ais={ais}
           showAis={showAis}

@@ -169,3 +169,42 @@ vessel is within ±6 h of the pass but not inside an event, each of its
 events in that window is listed on its own line; the spec's example shows
 one, the data often has two (harbour evening departures plus the previous
 night's tow).
+
+## 2026-09-16 · M7 · `satellite_passes` is read at startup, not when the Observation tab opens
+
+Section 5.3 has the passes table loaded "once when the tab opens". The
+Sentinel-2 toggle on the map tab needs it too — it is what decides whether
+a clear pass exists near the scene — so it is loaded once with the other
+tables (518 rows, one request). M8 reuses the rows already in memory.
+
+## 2026-09-16 · M7 · "Clear" is under 20% cloud; the nearest such pass within ±1 day wins
+
+Section 7 says the toggle is enabled only when "a clear S2 pass exists
+within ±1 day of the scene" without a number; the Observation tab's
+threshold (11.1, S2 under 20%) is used, on the catalogue's tile-wide
+`cloud_pct`. Among clear passes within 24 h of `acq_mid` the closest in
+time is shown, over its whole UTC day with `MAXCC=30` as 7.1 specifies.
+With the current fourteen scenes only one pass qualifies — 26 Aug 2026
+10:30 UTC, 2.1% cloud — so the toggle is live on four scenes (25 Aug 17:01,
+26 Aug 05:39, 26 Aug 16:53, 27 Aug 05:31) and disabled on the other ten.
+The spec's M7 test names May/June and February scenes from the earlier
+data set; the equivalent now is 26 Aug versus 02 Sep.
+
+## 2026-09-16 · M7 · The disabled toggle says why; the enabled one says when
+
+Not in section 7's table, but small. When disabled, an (i) beside the
+greyed toggle (and the label's hover title) reads *"No clear Sentinel-2
+image within a day of this scene: the best pass, 02 Sept 2026 10:27 UTC,
+was 85% cloud (the limit is 20%)"*, or *"No Sentinel-2 pass within a day
+of this scene"*. When enabled, one muted line under it gives the photo's
+date, time, cloud cover and its distance from the radar — *"26 Aug 2026
+10:30 UTC · 2% cloud · 19 h before the radar"* — because the photo is up
+to a day off the acquisition instant and a viewer should not take the
+vessels in it for the radar returns.
+
+## 2026-09-16 · M7 · The loading bar covers both Sentinel sources
+
+Section 14's thin bar was tied to the radar source alone. Sentinel-2 tiles
+come from the same WMS at the same speed, so the bar now shows while
+either source has tiles in flight. Nothing is requested from the S2 layer
+until the toggle is ticked; a hidden layer loads no tiles.

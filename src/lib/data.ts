@@ -72,6 +72,18 @@ export interface GfwEvent {
   site_code: string
 }
 
+// One row per pass over one site (section 5.1), from the Copernicus
+// catalogue. `cloud_pct` is the catalogue's tile-wide cloud cover for
+// Sentinel-2 and null for Sentinel-1.
+export interface SatellitePass {
+  site_code: string
+  site_label: string
+  mission: 'S1' | 'S2'
+  product_name: string
+  acq_start: string // ISO-8601, UTC
+  cloud_pct: number | null
+}
+
 // Supabase returns at most 1000 rows per request regardless of `limit`.
 // Page with a stable ordering until a short page comes back.
 const PAGE = 1000
@@ -95,6 +107,11 @@ export const loadVessels = () => fetchAll<Vessel>('vessels', ['mmsi'])
 export const loadSnapshots = () => fetchAll<Snapshot>('snapshots', ['scene_id', 'mmsi'])
 // ~2,200 rows over 18 months, loaded once at startup (section 5.3).
 export const loadGfwEvents = () => fetchAll<GfwEvent>('gfw_fishing_events', ['start', 'event_id'])
+// ~500 rows, both sites, both missions. Section 5.3 has it loaded when the
+// Observation tab opens; the map needs it too, to decide whether a clear
+// Sentinel-2 pass exists near the scene (M7), so it is read once at startup.
+export const loadPasses = () =>
+  fetchAll<SatellitePass>('satellite_passes', ['acq_start', 'product_name'])
 
 export async function loadSite(): Promise<SiteGeometry> {
   const res = await fetch('/site.geojson')

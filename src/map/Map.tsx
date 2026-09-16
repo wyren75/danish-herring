@@ -6,10 +6,10 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 // its own URL at runtime, which bundlers don't see. Let Vite bundle it and
 // tell MapLibre where it landed.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
-import type { Scene } from '../lib/data'
+import type { SatellitePass, Scene } from '../lib/data'
 import type { LonLat } from '../lib/geo'
 import type { Verdict } from '../lib/verdict'
-import { s1TileUrl } from '../lib/wms'
+import { s1TileUrl, s2TileUrl } from '../lib/wms'
 import {
   EMPTY_AIS,
   ICON_PIXEL_RATIO,
@@ -24,7 +24,7 @@ import {
   IDS,
   INITIAL_VIEW,
   MAX_BOUNDS,
-  S1_ATTRIBUTION,
+  SENTINEL_ATTRIBUTION,
   SITE_LABEL,
   SITE_RECT,
   ZOOM,
@@ -35,6 +35,10 @@ maplibregl.setWorkerUrl(maplibreWorkerUrl)
 interface Props {
   scene: Scene | null
   showRadar: boolean
+  // Layer 2 exists only when a clear Sentinel-2 pass lies within a day of
+  // the scene (section 7); null means no source is added at all.
+  s2Pass: SatellitePass | null
+  showS2: boolean
   gfw: GfwFeatures
   ais: AisFeatures
   showAis: boolean
@@ -98,6 +102,8 @@ function markerAt(map: maplibregl.Map, p: maplibregl.Point): AisProps | null {
 export default function Map({
   scene,
   showRadar,
+  s2Pass,
+  showS2,
   gfw,
   ais,
   showAis,
@@ -121,7 +127,9 @@ export default function Map({
   // Set once the style and our static layers are in; scene-driven layers
   // can only be added after that.
   const [ready, setReady] = useState(false)
-  const [radarLoading, setRadarLoading] = useState(false)
+  // Imagery sources with tiles in flight — the loading bar shows while any.
+  const loadingSources = useRef(new Set<string>())
+  const [tilesLoading, setTilesLoading] = useState(false)
 
   useEffect(() => {
     if (!container.current) return
@@ -149,15 +157,24 @@ export default function Map({
       }
     })
 
-    // Radar tiles are the only slow thing (section 14): show a thin bar
-    // from the first S1 tile request until the source reports loaded.
+    // Sentinel tiles are the only slow thing (section 14): show a thin bar
+    // from the first tile request until every imagery source reports loaded.
+    const imagery = new Set<string>([IDS.s2, IDS.s1])
+    const loading = loadingSources.current
     map.on('sourcedataloading', (e) => {
-      if (e.sourceId === IDS.s1) setRadarLoading(true)
+      if (!imagery.has(e.sourceId)) return
+      loading.add(e.sourceId)
+      setTilesLoading(true)
     })
     map.on('sourcedata', (e) => {
-      if (e.sourceId === IDS.s1 && e.isSourceLoaded) setRadarLoading(false)
+      if (!imagery.has(e.sourceId) || !e.isSourceLoaded) return
+      loading.delete(e.sourceId)
+      if (!loading.size) setTilesLoading(false)
     })
-    map.on('idle', () => setRadarLoading(false))
+    map.on('idle', () => {
+      loading.clear()
+      setTilesLoading(false)
+    })
 
     map.on('load', () => {
       // Layer 4: site boundary — outline only, 2 px, accent, no fill (7.2).
@@ -356,29 +373,36 @@ export default function Map({
     }
   }, [])
 
-  // Layer 3: Sentinel-1 radar, pinned to the selected scene's two-minute
-  // window. The source is rebuilt whenever the scene changes (7.1) and sits
-  // just below the site boundary.
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !ready || !scene) return
-
-    map.addSource(IDS.s1, {
+  // A Sentinel Hub raster source and layer, inserted below `beforeId`.
+  // Returns the cleanup that removes both.
+  const addImagery = (map: maplibregl.Map, id: string, url: string, beforeId: string) => {
+    map.addSource(id, {
       type: 'raster',
-      tiles: [s1TileUrl(scene)],
+      tiles: [url],
       tileSize: 256,
       maxzoom: ZOOM.max, // never request beyond the zoom cap (section 18)
-      attribution: S1_ATTRIBUTION,
+      attribution: SENTINEL_ATTRIBUTION,
     })
-    map.addLayer({ id: IDS.s1, type: 'raster', source: IDS.s1 }, IDS.site)
-
+    map.addLayer({ id, type: 'raster', source: id }, beforeId)
     return () => {
       // The map may already be gone if the component is unmounting.
       if (mapRef.current !== map) return
-      map.removeLayer(IDS.s1)
-      map.removeSource(IDS.s1)
-      setRadarLoading(false)
+      map.removeLayer(id)
+      map.removeSource(id)
+      // A removed source never reports loaded; drop it from the bar.
+      loadingSources.current.delete(id)
+      if (!loadingSources.current.size) setTilesLoading(false)
     }
+  }
+
+  // Layer 3: Sentinel-1 radar, pinned to the selected scene's two-minute
+  // window. The source is rebuilt whenever the scene changes (7.1) and sits
+  // just below the site boundary — which puts it above layer 2 whenever
+  // both exist, whichever was added first.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !scene) return
+    return addImagery(map, IDS.s1, s1TileUrl(scene), IDS.site)
   }, [ready, scene])
 
   useEffect(() => {
@@ -386,6 +410,22 @@ export default function Map({
     if (!map || !ready || !map.getLayer(IDS.s1)) return
     map.setLayoutProperty(IDS.s1, 'visibility', showRadar ? 'visible' : 'none')
   }, [ready, scene, showRadar])
+
+  // Layer 2: Sentinel-2 true colour over the whole day of the nearest clear
+  // pass (7.1). Only added when such a pass exists; rebuilt when it changes
+  // (two scenes a day apart can share one). Sits under the radar.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !s2Pass) return
+    const beforeId = map.getLayer(IDS.s1) ? IDS.s1 : IDS.site
+    return addImagery(map, IDS.s2, s2TileUrl(s2Pass), beforeId)
+  }, [ready, s2Pass])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !map.getLayer(IDS.s2)) return
+    map.setLayoutProperty(IDS.s2, 'visibility', showS2 ? 'visible' : 'none')
+  }, [ready, s2Pass, showS2])
 
   useEffect(() => {
     const map = mapRef.current
@@ -450,10 +490,10 @@ export default function Map({
     <>
       <div ref={container} className="map" />
       <div
-        className={'loading-bar' + (radarLoading ? ' loading-bar--on' : '')}
+        className={'loading-bar' + (tilesLoading ? ' loading-bar--on' : '')}
         role="progressbar"
-        aria-label="Loading radar tiles"
-        aria-hidden={!radarLoading}
+        aria-label="Loading imagery tiles"
+        aria-hidden={!tilesLoading}
       />
     </>
   )

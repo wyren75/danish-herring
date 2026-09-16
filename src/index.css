@@ -267,6 +267,26 @@ body {
   accent-color: var(--accent);
 }
 
+/* Optical S2 (section 7, layer 2): greyed out when no clear pass exists near
+   the scene, with the reason in an (i); a one-line note of which day and how
+   cloudy when it does. */
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.layer-toggle:has(input:disabled) {
+  color: var(--muted);
+  cursor: default;
+}
+
+.layer-note {
+  margin: -2px 0 4px 22px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* "Reveal all" (7.3): a real button, but a quiet one. */
 .reveal {
   margin: 6px 0 0;
