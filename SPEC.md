@@ -874,11 +874,66 @@ panel `#131720`, text `#e6e8ee`, orange `#f5a524`, blue `#4fb3ff`, muted
 `#8a90a0`. No gradients. Desktop only — below 1100 px wide the inspector
 may overlay the map instead of narrowing it; nothing else is required.
 
-### 13.7 Milestone
+### 13.7 Milestones
 
 | M | Build | Done when |
 |---|---|---|
-| **M10** | The v1 layout, sections 13.3–13.5. Move, don't rewrite: reuse `ScenePicker`, `Layers`, `Verdict`, `Radius`, `SceneCounts` as they are, re-parented. | On load the whole orange outline is visible regardless of window width and the hint shows; the top bar steps scenes with ◀ ▶ and arrow keys; the map has no sidebar; Layers opens from the map's top-right; a click slides the inspector in with verdict, GFW lines and the radius slider; `✕` closes it. Every M4–M8 check still passes. |
+| **M10** | The v1 layout, sections 13.3–13.5. Move, don't rewrite. | Built 16 Sept. |
+| **M10b** | Polish from the owner's live review, section 13.8. | Row 2 reads as a sentence with the two counts prominent and no product name; the Layers control is a stacked-squares icon top-left; the inspector has a titled GFW section with three lines and an (i); the legend has six glyph-plus-label lines including the dashed rectangle. |
+
+### 13.8 M10b — polish from the live review (16 Sept)
+
+**Top bar, row 2.** Remove the product name from the bar. Rewrite the row
+as one readable sentence, regular size, the numbers in orange and bold:
+
+> Radar 05:31:38 UTC · inside the site: **6 fishing vessels** (Danish AIS)
+> · **2** in a fishing event (GFW)
+
+Keep the two (i) tooltips on the words *Danish AIS* and *GFW*. The product
+name moves to the **inspector footer**, small monospace, prefixed *scene* —
+it is the traceable identifier of the exact image, useful to a technical
+reader, not to a first glance. Also shown as the tooltip of the scene
+stepper's text.
+
+**Layers control.** Move to the map's **top-left**. Collapsed it is an icon
+button only — the stacked-squares "layers" glyph (a simple inline SVG of
+three offset rhombi), 36 px, panel colour — with the tooltip *Layers*.
+Expanded it is the same 220 px card as now, opening to the right of the
+icon. Zoom stays top-right.
+
+**Inspector — GFW section.** Under the verdict and offset, a titled
+section:
+
+```
+Global Fishing Watch  (i)
+  At the pass     No fishing event in progress
+                  — or —  Fishing event in progress since 03:50 UTC (1 h 41 min)
+  Around the pass Fished 17:42 → 21:15 UTC, 6 km NE
+                  — or —  None within 6 h
+  History         23 fishing events in 18 months · 9 inside the site
+```
+
+Three fixed labels, three lines, each either a fact or a plain "none". The
+(i) tooltip:
+
+> *Global Fishing Watch classifies fishing from its own satellite AIS and
+> publishes each episode as an event with a start, an end, and the
+> rectangle the vessel stayed inside. The dashed rectangles on the map are
+> those areas — not tracks, which GFW does not publish. GFW sees fewer
+> vessels than the Danish shore network and only counts sustained,
+> recognised fishing behaviour.*
+
+**Legend.** Six lines, each a glyph and a label of at most four words, no
+colour names, no descriptions:
+
+```
+▲ (orange)         Fishing vessel, under way
+● (orange)         Fishing vessel, stopped
+▲ (blue)           Other vessel
+◎ (white ring)     Inside the protected site
+▲ (large, white edge)  Your match
+▭ (dashed orange)  GFW fishing event area
+```
 
 ---
 
