@@ -466,7 +466,7 @@ are blobs that encode nothing.
 | Vessel | Colour |
 |---|---|
 | `ship_type = Fishing` | orange |
-| anything else | light grey |
+| anything else | light blue `#4fb3ff` |
 | inside the site polygon | add a 2 px white ring |
 | **the matched vessel** | **always drawn, even with the AIS layer hidden** — larger, white outline, so the match line from the click ends on a symbol, not in open water |
 
