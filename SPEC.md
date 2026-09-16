@@ -456,13 +456,21 @@ DK00FX113 · Hirsholmene" anchored at the polygon's north-east.
 
 ### 7.3 AIS snapshots (layer 6)
 
-Circle markers, 6 px:
+Markers are **small triangles rotated to `cog`** (about 10 px), so a vessel
+reads as a vessel and shows its heading. When `sog` < 0.5 kn the heading is
+meaningless — draw a 6 px circle instead. No boat icons: at this size they
+are blobs that encode nothing.
 
 | Vessel | Colour |
 |---|---|
 | `ship_type = Fishing` | orange |
 | anything else | light grey |
 | inside the site polygon | add a 2 px white ring |
+| **the matched vessel** | **always drawn, even with the AIS layer hidden** — larger, white outline, so the match line from the click ends on a symbol, not in open water |
+
+The gap between a bright radar dot and its AIS marker is expected and
+informative (section 9.4): moored vessels sit almost on their dot, moving
+ones are displaced along the satellite's track. Do not "correct" it.
 
 Hidden by default — **this is the point of the app.** The user should look at
 the radar first and click blind. Two controls in the panel: *Show AIS* toggle
