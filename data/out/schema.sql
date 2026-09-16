@@ -12,8 +12,11 @@ create table scenes (
   bbox_s        double precision,
   bbox_e        double precision,
   bbox_n        double precision,
-  n_positions   integer,
-  n_vessels     integer
+  n_positions          integer,
+  n_vessels            integer,
+  n_in_site            integer,
+  n_fishing_in_site    integer,
+  n_trawling_in_site   integer
 );
 
 create table vessels (
