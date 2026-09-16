@@ -6,8 +6,8 @@ interface Props {
   scenes: Scene[]
   selectedId: string | null
   onSelect: (sceneId: string) => void
-  // Rendered under the selected scene's details: the confidence ratio,
-  // shown once per scene (section 10).
+  // Rendered under the selected scene's details: the two counts at the
+  // instant, shown once per scene (section 10.1).
   children?: ReactNode
 }
 

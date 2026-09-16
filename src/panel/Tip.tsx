@@ -1,7 +1,7 @@
 import { useId } from 'react'
 
 // A small (i) with a tooltip on hover or keyboard focus. Used for the offset
-// note (SPEC.md 9.4) and, from M6, the confidence note (section 10).
+// note (SPEC.md 9.4) and the two-count note (section 10.1).
 export default function Tip({ text }: { text: string }) {
   const id = useId()
   return (

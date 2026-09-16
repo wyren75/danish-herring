@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { eventsOnSceneDay } from './lib/confidence'
 import {
   loadGfwEvents,
   loadScenes,
@@ -12,14 +11,15 @@ import {
   type Vessel,
 } from './lib/data'
 import type { LonLat, SiteGeometry } from './lib/geo'
+import { eventsAroundPass, eventsOnSceneDay } from './lib/gfw'
 import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
 import { aisFeatures, EMPTY_AIS } from './map/ais'
 import { EMPTY_GFW, gfwFeatures } from './map/gfw'
 import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
-import Confidence from './panel/Confidence'
 import Layers from './panel/Layers'
 import Radius from './panel/Radius'
+import SceneCounts from './panel/SceneCounts'
 import ScenePicker, { rankScenes } from './panel/ScenePicker'
 import VerdictPanel from './panel/Verdict'
 
@@ -80,12 +80,6 @@ export default function App() {
     [data, selectedId],
   )
 
-  // Layer 5: the GFW events overlapping the scene's UTC day (7.4).
-  const gfw = useMemo(
-    () => (data && scene ? gfwFeatures(eventsOnSceneDay(data.events, scene)) : EMPTY_GFW),
-    [data, scene],
-  )
-
   // Selecting a scene clears any click state (section 8).
   const selectScene = useCallback((id: string) => {
     setSelectedId(id)
@@ -95,6 +89,23 @@ export default function App() {
   const verdict = useMemo(
     () => (data && click ? computeVerdict(click, sceneSnapshots, radiusM, data.site) : null),
     [data, click, sceneSnapshots, radiusM],
+  )
+
+  // The matched vessel's GFW events around the pass (10.2): the verdict
+  // panel tells their story and the map draws them, layer on or off (10.3).
+  const matchedEvents = useMemo(() => {
+    const mmsi = verdict?.matched ? verdict.nearest?.snapshot.mmsi : undefined
+    return data && scene && mmsi ? eventsAroundPass(data.events, mmsi, scene) : []
+  }, [data, scene, verdict])
+
+  // Layer 5: the matched vessel's events always; every event overlapping the
+  // scene's UTC day (7.4) only when the layer is on.
+  const gfw = useMemo(
+    () =>
+      data && scene
+        ? gfwFeatures(showGfw ? eventsOnSceneDay(data.events, scene) : [], matchedEvents, showGfw)
+        : EMPTY_GFW,
+    [data, scene, matchedEvents, showGfw],
   )
 
   const ais = useMemo(
@@ -123,7 +134,13 @@ export default function App() {
           <>
             <ScenePicker scenes={data.scenes} selectedId={selectedId} onSelect={selectScene}>
               {scene && (
-                <Confidence scene={scene} sceneSnapshots={sceneSnapshots} events={data.events} />
+                <SceneCounts
+                  scene={scene}
+                  sceneSnapshots={sceneSnapshots}
+                  vessels={data.vessels}
+                  events={data.events}
+                  site={data.site}
+                />
               )}
             </ScenePicker>
             <Layers
@@ -139,8 +156,8 @@ export default function App() {
             {scene && (
               <VerdictPanel
                 scene={scene}
-                sceneSnapshots={sceneSnapshots}
                 events={data.events}
+                matchedEvents={matchedEvents}
                 verdict={verdict}
                 vessels={data.vessels}
               />
@@ -158,7 +175,6 @@ export default function App() {
           scene={scene}
           showRadar={showRadar}
           gfw={gfw}
-          showGfw={showGfw}
           ais={ais}
           showAis={showAis}
           revealKey={revealKey}

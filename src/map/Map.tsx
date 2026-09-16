@@ -36,7 +36,6 @@ interface Props {
   scene: Scene | null
   showRadar: boolean
   gfw: GfwFeatures
-  showGfw: boolean
   ais: AisFeatures
   showAis: boolean
   // Bumped by "Reveal all": the markers sweep in instead of just appearing.
@@ -100,7 +99,6 @@ export default function Map({
   scene,
   showRadar,
   gfw,
-  showGfw,
   ais,
   showAis,
   revealKey,
@@ -202,46 +200,64 @@ export default function Map({
         },
       })
 
-      // Layer 5: GFW fishing events (7.4) — small orange squares, off by
-      // default. Context, not the subject: drawn under the AIS markers.
+      // Layer 5: GFW fishing events (7.4, 10.3) — a thin dashed rectangle per
+      // event (the box the vessel stayed inside) with a small orange square at
+      // its centre. Context, not the subject: drawn under the AIS markers.
+      // What is in the source decides what shows: nothing until a vessel is
+      // matched, then that vessel's events; the whole day only when the
+      // layer is ticked. Opacity is per feature (map/gfw.ts).
       map.addImage(IDS.gfwIcon, squareIcon(), { sdf: true, pixelRatio: ICON_PIXEL_RATIO })
       map.addSource(IDS.gfw, { type: 'geojson', data: EMPTY_GFW })
+      map.addLayer({
+        id: IDS.gfwBox,
+        type: 'line',
+        source: IDS.gfw,
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: {
+          'line-color': COLORS.accent,
+          'line-width': 1,
+          'line-dasharray': [3, 2],
+          'line-opacity': ['get', 'opacity'],
+        },
+      })
       map.addLayer({
         id: IDS.gfw,
         type: 'symbol',
         source: IDS.gfw,
+        filter: ['==', ['geometry-type'], 'Point'],
         layout: {
           'icon-image': IDS.gfwIcon,
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
-          visibility: 'none',
         },
         paint: {
           'icon-color': COLORS.accent,
           'icon-halo-color': COLORS.bg,
           'icon-halo-width': 1,
-          'icon-opacity': 0.9,
+          'icon-opacity': ['get', 'opacity'],
         },
       })
-      // GFW tooltip (7.4): vessel, flag, duration, inside/outside the site.
-      // A hidden layer renders nothing, so these only fire when it is shown.
+      // GFW tooltip (7.4, unchanged): vessel, flag, duration, inside/outside
+      // the site — on the square and on the rectangle's edge alike.
       const gfwTip = new maplibregl.Popup({
         closeButton: false,
         closeOnClick: false,
         className: 'gfw-tip',
         offset: 8,
       })
-      map.on('mousemove', IDS.gfw, (e) => {
-        const hit = e.features?.[0]
-        if (!hit) return
-        const { vessel, detail } = hit.properties as GfwProps
-        const el = document.createElement('div')
-        el.append(Object.assign(document.createElement('strong'), { textContent: vessel }))
-        el.append(document.createElement('br'))
-        el.append(detail)
-        gfwTip.setLngLat(e.lngLat).setDOMContent(el).addTo(map)
-      })
-      map.on('mouseleave', IDS.gfw, () => gfwTip.remove())
+      for (const layer of [IDS.gfw, IDS.gfwBox]) {
+        map.on('mousemove', layer, (e) => {
+          const hit = e.features?.[0]
+          if (!hit) return
+          const { vessel, detail } = hit.properties as GfwProps
+          const el = document.createElement('div')
+          el.append(Object.assign(document.createElement('strong'), { textContent: vessel }))
+          el.append(document.createElement('br'))
+          el.append(detail)
+          gfwTip.setLngLat(e.lngLat).setDOMContent(el).addTo(map)
+        })
+        map.on('mouseleave', layer, () => gfwTip.remove())
+      }
 
       // Layer 6: AIS snapshots (7.3). Triangles rotated to cog for moving
       // vessels, dots for the rest; orange if fishing, blue otherwise; a white
@@ -391,12 +407,6 @@ export default function Map({
     const source = map.getSource(IDS.gfw) as maplibregl.GeoJSONSource | undefined
     source?.setData(gfw)
   }, [ready, gfw])
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !ready) return
-    map.setLayoutProperty(IDS.gfw, 'visibility', showGfw ? 'visible' : 'none')
-  }, [ready, showGfw])
 
   // Show / hide, and the "Reveal all" sweep. Each new revealKey runs the
   // opacity expression forward over REVEAL_MS; a plain toggle jumps to the end.

@@ -47,13 +47,18 @@ export interface Snapshot {
 
 // Global Fishing Watch apparent-fishing events (section 5.1). `inside_site`
 // was tested against the site polygon at ingestion; the events themselves
-// were fetched for the box.
+// were fetched for the box. `bbox_*` is the rectangle the vessel stayed
+// inside during the event; `lat`/`lon` is its centre point.
 export interface GfwEvent {
   event_id: string
   start: string // ISO-8601, UTC
   end: string
   lat: number
   lon: number
+  bbox_w: number
+  bbox_s: number
+  bbox_e: number
+  bbox_n: number
   inside_site: boolean
   mmsi: string
   vessel_name: string | null

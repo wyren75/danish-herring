@@ -134,3 +134,38 @@ layer using a 6 px square built by the same signed-distance rasteriser as
 the AIS triangle (`sdfIcon` in `map/ais.ts`). Squares are smaller than the
 AIS markers and drawn beneath them; hover shows a MapLibre popup with the
 four facts of 7.4 and nothing else.
+
+## 2026-09-16 · M6b · `Confidence` files renamed; section 17 flag retired
+
+Section 10 retired the word "confidence" and the ratio with it, so
+`lib/confidence.ts` became `lib/gfw.ts` and `panel/Confidence.tsx` became
+`panel/SceneCounts.tsx` (section 15's tree predates the rewrite). The
+section 17 flag "confidence over site polygon or padded box" had nothing
+left to switch: 10.1 fixes the GFW count to `inside_site`. Removed. The two
+counts are shown once, under the scene details, and no longer repeated
+under each verdict.
+
+## 2026-09-16 · M6b · GFW bounding boxes normalised in the browser
+
+In `gfw_fishing_events`, 1,032 of 2,194 rows have `bbox_w > bbox_e` (never
+`bbox_s > bbox_n`); the centre point always falls inside the min/max box,
+so it is an ordering quirk from the source, not bad data. `map/gfw.ts`
+takes min/max of each pair before drawing the rectangle. Left the table
+alone; worth fixing at ingestion if the loader is touched again.
+
+## 2026-09-16 · M6b · "Stopped at", not "Transiting at", below 0.5 kn
+
+Section 10.2's first line reads "Transiting at 17:01 UTC." for a vessel
+that is not inside a GFW event at the instant. A vessel under 0.5 kn — the
+same threshold that turns its marker into a dot (7.3) — is not transiting;
+it says "Stopped at" instead. Same line otherwise.
+
+## 2026-09-16 · M6b · "in 18 months" is measured from the table
+
+The history line's span is the time between the earliest `start` and the
+latest `end` in `gfw_fishing_events`, rounded to months (currently 18), so
+it stays true if the table is reloaded with a different window. When a
+vessel is within ±6 h of the pass but not inside an event, each of its
+events in that window is listed on its own line; the spec's example shows
+one, the data often has two (harbour evening departures plus the previous
+night's tow).

@@ -1,15 +1,18 @@
 import { useState } from 'react'
 import type { GfwEvent, Scene, Snapshot, Vessel } from '../lib/data'
-import { latLon, metres, utcTimeSeconds } from '../lib/format'
+import { duration, kilometres, latLon, metres, utcTime, utcTimeSeconds } from '../lib/format'
 import { midFlag } from '../lib/geo'
+import { AROUND_PASS_H, history, relateEvent } from '../lib/gfw'
 import type { Verdict } from '../lib/verdict'
-import Confidence from './Confidence'
+import { MOVING_KN } from '../map/ais'
 import Tip from './Tip'
 
 interface Props {
   scene: Scene
-  sceneSnapshots: Snapshot[]
   events: GfwEvent[]
+  // The matched vessel's GFW events around the pass (10.2) — the same set the
+  // map draws whether or not the layer is on (10.3).
+  matchedEvents: GfwEvent[]
   verdict: Verdict | null
   vessels: Map<string, Vessel>
 }
@@ -41,7 +44,7 @@ const OFFSET_TIP =
 
 // The verdict panel (SPEC.md sections 9.2 and 9.3). A live region so a
 // screen reader hears the answer to each click (section 14).
-export default function VerdictPanel({ scene, sceneSnapshots, events, verdict, vessels }: Props) {
+export default function VerdictPanel({ scene, events, matchedEvents, verdict, vessels }: Props) {
   // The explanatory block is open the first time and remembers being closed.
   const [explainOpen, setExplainOpen] = useState(true)
   const at = utcTimeSeconds(scene.acq_mid)
@@ -52,7 +55,14 @@ export default function VerdictPanel({ scene, sceneSnapshots, events, verdict, v
       {!verdict ? (
         <p className="muted">Click a bright return on the radar to look it up in the AIS record.</p>
       ) : verdict.matched && verdict.nearest ? (
-        <Matched nearest={verdict.nearest} verdict={verdict} at={at} vessels={vessels} />
+        <Matched
+          nearest={verdict.nearest}
+          verdict={verdict}
+          scene={scene}
+          vessels={vessels}
+          events={events}
+          matchedEvents={matchedEvents}
+        />
       ) : (
         <>
           <p className="verdict-headline">No AIS contact within {metres(verdict.radiusM)}</p>
@@ -80,14 +90,14 @@ export default function VerdictPanel({ scene, sceneSnapshots, events, verdict, v
             <p>
               A radar return with no AIS contact means one of three things: the vessel was
               not broadcasting; it was broadcasting and the shore network did not receive
-              it; or what you clicked is not a vessel. This tool cannot tell which. The
-              confidence figure below estimates how often the second case occurs.
+              it; or what you clicked is not a vessel. This tool cannot tell which. The AIS
+              here is the Danish Maritime Authority's official shore network; a missing
+              contact most likely means the vessel was not broadcasting, or what you
+              clicked is not a vessel.
             </p>
           </details>
         </>
       )}
-      {/* The confidence figure is repeated under every verdict (section 10). */}
-      {verdict && <Confidence scene={scene} sceneSnapshots={sceneSnapshots} events={events} />}
     </section>
   )
 }
@@ -95,16 +105,21 @@ export default function VerdictPanel({ scene, sceneSnapshots, events, verdict, v
 function Matched({
   nearest,
   verdict,
-  at,
+  scene,
   vessels,
+  events,
+  matchedEvents,
 }: {
   nearest: NonNullable<Verdict['nearest']>
   verdict: Verdict
-  at: string
+  scene: Scene
   vessels: Map<string, Vessel>
+  events: GfwEvent[]
+  matchedEvents: GfwEvent[]
 }) {
   const s = nearest.snapshot
   const v = vessels.get(s.mmsi)
+  const at = utcTimeSeconds(scene.acq_mid)
   return (
     <>
       <p className="verdict-headline">{v?.name || '(no name broadcast)'}</p>
@@ -129,8 +144,60 @@ function Matched({
       <p className="has-tip">
         Offset from your click: {metres(nearest.distanceM)} <Tip text={OFFSET_TIP} />
       </p>
+      <GfwContext snapshot={s} scene={scene} around={matchedEvents} events={events} />
       <InSite verdict={verdict} />
     </>
+  )
+}
+
+// What GFW says the matched vessel did (10.2): its events around the pass,
+// then its whole history in the table. Both under the offset.
+function GfwContext({
+  snapshot,
+  scene,
+  around,
+  events,
+}: {
+  snapshot: Snapshot
+  scene: Scene
+  around: GfwEvent[]
+  events: GfwEvent[]
+}) {
+  const now = utcTime(scene.acq_mid)
+  const related = around.map((e) => relateEvent(e, snapshot, scene))
+  const current = related.find((r) => r.inProgress)
+  const others = related.filter((r) => !r.inProgress)
+  const h = history(events, snapshot.mmsi)
+  // "Transiting" is the spec's word for a vessel not in an event; a vessel
+  // below steerage way is stopped, not transiting.
+  const state = snapshot.sog != null && snapshot.sog < MOVING_KN ? 'Stopped' : 'Transiting'
+  return (
+    <div className="gfw-context">
+      {current ? (
+        <p>
+          GFW fishing event in progress since {utcTime(current.event.start)} (
+          {duration(current.elapsedMs)} so far).
+        </p>
+      ) : related.length ? (
+        <p>
+          {state} at {now}.
+        </p>
+      ) : (
+        <p>No GFW fishing event within {AROUND_PASS_H} hours of this pass.</p>
+      )}
+      {others.map((r) => (
+        <p key={r.event.event_id}>
+          GFW recorded this vessel fishing {utcTime(r.event.start).replace(' UTC', '')} →{' '}
+          {utcTime(r.event.end)}, {kilometres(r.distanceM)} {r.compass}.
+        </p>
+      ))}
+      <p className="muted">
+        GFW:{' '}
+        {h.total
+          ? `${h.total} fishing ${h.total === 1 ? 'event' : 'events'} for this vessel in ${h.spanMonths} months · ${h.insideSite} inside the site.`
+          : `no fishing events for this vessel in ${h.spanMonths} months.`}
+      </p>
+    </div>
   )
 }
 

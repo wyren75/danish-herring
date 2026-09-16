@@ -49,6 +49,21 @@ const int = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 })
 /** "1,240 m" */
 export const metres = (m: number) => `${int.format(Math.round(m))} m`
 
+/** "6 km", "2.4 km", or "800 m" under a kilometre. */
+export function kilometres(m: number): string {
+  if (m < 1000) return metres(m)
+  const km = m / 1000
+  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`
+}
+
+/** "1 h 41 min" or "23 min". */
+export function duration(ms: number): string {
+  const minutes = Math.round(ms / 60_000)
+  const h = Math.floor(minutes / 60)
+  const min = minutes % 60
+  return h ? `${h} h ${min} min` : `${min} min`
+}
+
 /** "57.4412 N, 10.5537 E" */
 export const latLon = (lat: number, lon: number) =>
   `${Math.abs(lat).toFixed(4)} ${lat < 0 ? 'S' : 'N'}, ${Math.abs(lon).toFixed(4)} ${lon < 0 ? 'W' : 'E'}`

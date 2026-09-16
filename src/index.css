@@ -295,7 +295,7 @@ body {
   cursor: default;
 }
 
-/* (i) tooltip (9.4, and 10 from M6). Shown on hover or keyboard focus. */
+/* (i) tooltip (9.4 and 10.1). Shown on hover or keyboard focus. */
 /* The tooltip is positioned against the line that holds the (i), so it can
    span the panel's width instead of clipping at its edge. */
 .has-tip {
@@ -443,26 +443,50 @@ body {
   filter: invert(0.85);
 }
 
-/* Confidence ratio (section 10): under the scene details and under every
-   verdict. */
-.confidence {
+/* Two counts at the instant (section 10.1): once, under the scene details. */
+.counts {
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
   font-size: 12px;
 }
 
-.confidence p {
+.counts p {
   margin: 0 0 4px;
 }
 
-.confidence-headline {
+.counts-headline {
   font-size: 13px;
   color: var(--text);
 }
 
-.verdict .confidence {
-  margin-top: 12px;
+.counts-facts {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 2px 8px;
+  margin: 0 0 0 12px;
+  font-size: 13px;
+}
+
+.counts-facts dt {
+  color: var(--muted);
+}
+
+.counts-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* What GFW says the matched vessel did (10.2): under the offset. */
+.gfw-context {
+  margin: 4px 0 6px;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent);
+  font-size: 13px;
+}
+
+.gfw-context p {
+  margin: 0 0 4px;
 }
 
 /* Symbols legend (7.3): closed by default, at the bottom of Layers. */
