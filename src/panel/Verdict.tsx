@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import type { Scene, Snapshot, Vessel } from '../lib/data'
+import type { GfwEvent, Scene, Snapshot, Vessel } from '../lib/data'
 import { latLon, metres, utcTimeSeconds } from '../lib/format'
 import { midFlag } from '../lib/geo'
 import type { Verdict } from '../lib/verdict'
+import Confidence from './Confidence'
 import Tip from './Tip'
 
 interface Props {
   scene: Scene
+  sceneSnapshots: Snapshot[]
+  events: GfwEvent[]
   verdict: Verdict | null
   vessels: Map<string, Vessel>
 }
@@ -38,7 +41,7 @@ const OFFSET_TIP =
 
 // The verdict panel (SPEC.md sections 9.2 and 9.3). A live region so a
 // screen reader hears the answer to each click (section 14).
-export default function VerdictPanel({ scene, verdict, vessels }: Props) {
+export default function VerdictPanel({ scene, sceneSnapshots, events, verdict, vessels }: Props) {
   // The explanatory block is open the first time and remembers being closed.
   const [explainOpen, setExplainOpen] = useState(true)
   const at = utcTimeSeconds(scene.acq_mid)
@@ -83,6 +86,8 @@ export default function VerdictPanel({ scene, verdict, vessels }: Props) {
           </details>
         </>
       )}
+      {/* The confidence figure is repeated under every verdict (section 10). */}
+      {verdict && <Confidence scene={scene} sceneSnapshots={sceneSnapshots} events={events} />}
     </section>
   )
 }

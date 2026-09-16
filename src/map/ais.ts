@@ -65,9 +65,10 @@ export function aisFeatures(
 }
 
 // ---------------------------------------------------------------------------
-// The triangle marker, as a signed-distance-field image. One SDF image lets
-// MapLibre set colour, halo (the white ring) and size per feature; a plain
-// bitmap would need one image per combination.
+// Marker images as signed-distance fields. One SDF image lets MapLibre set
+// colour, halo (the white ring) and size per feature; a plain bitmap would
+// need one image per combination. The GFW square (map/gfw.ts) is built the
+// same way.
 //
 // Encoding follows MapLibre's glyph convention: alpha = 0.75 − d / 8, where d
 // is the signed distance in CSS pixels (positive outside the shape). The
@@ -75,8 +76,29 @@ export function aisFeatures(
 // alpha ≥ (6 − w) / 8, so the image needs about 6 px of padding.
 // ---------------------------------------------------------------------------
 
-const ICON_PX = 28 // CSS pixels, square
+export const ICON_PX = 28 // CSS pixels, square
 export const ICON_PIXEL_RATIO = 2
+
+export interface IconImage {
+  width: number
+  height: number
+  data: Uint8ClampedArray
+}
+
+/** Rasterise a signed-distance function (in CSS px, origin top-left). */
+export function sdfIcon(distance: (x: number, y: number) => number): IconImage {
+  const size = ICON_PX * ICON_PIXEL_RATIO
+  const data = new Uint8ClampedArray(size * size * 4)
+  for (let j = 0; j < size; j++) {
+    for (let i = 0; i < size; i++) {
+      const d = distance((i + 0.5) / ICON_PIXEL_RATIO, (j + 0.5) / ICON_PIXEL_RATIO)
+      const alpha = Math.max(0, Math.min(1, 0.75 - d / 8))
+      // RGB stays 0: MapLibre reads only the alpha channel of an SDF image.
+      data[(j * size + i) * 4 + 3] = Math.round(alpha * 255)
+    }
+  }
+  return { width: size, height: size, data }
+}
 
 // Apex up (north = cog 0°), 10 px tall, 7 px wide, centroid at the image
 // centre so `icon-rotate` turns it about its own middle.
@@ -93,7 +115,7 @@ function segmentDistance(px: number, py: number, a: [number, number], b: [number
   return Math.hypot(px - a[0] - t * dx, py - a[1] - t * dy)
 }
 
-function signedDistance(px: number, py: number): number {
+function triangleDistance(px: number, py: number): number {
   let d = Infinity
   let inside = true
   for (let i = 0; i < 3; i++) {
@@ -106,16 +128,4 @@ function signedDistance(px: number, py: number): number {
   return inside ? -d : d
 }
 
-export function triangleIcon(): { width: number; height: number; data: Uint8ClampedArray } {
-  const size = ICON_PX * ICON_PIXEL_RATIO
-  const data = new Uint8ClampedArray(size * size * 4)
-  for (let j = 0; j < size; j++) {
-    for (let i = 0; i < size; i++) {
-      const d = signedDistance((i + 0.5) / ICON_PIXEL_RATIO, (j + 0.5) / ICON_PIXEL_RATIO)
-      const alpha = Math.max(0, Math.min(1, 0.75 - d / 8))
-      // RGB stays 0: MapLibre reads only the alpha channel of an SDF image.
-      data[(j * size + i) * 4 + 3] = Math.round(alpha * 255)
-    }
-  }
-  return { width: size, height: size, data }
-}
+export const triangleIcon = () => sdfIcon(triangleDistance)

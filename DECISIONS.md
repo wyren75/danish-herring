@@ -107,3 +107,30 @@ Italy). Anything else still shows the three digits.
 Section 7.3 said light grey. Grey dots were invisible over the bright
 harbour clutter in the radar image, so the owner chose `#4fb3ff`. Fishing
 stays orange; the white in-site ring rule is unchanged.
+
+## 2026-09-16 · M6 · The confidence ratio is measurable on one scene
+
+Section 10 counts GFW vessels whose event spans the acquisition instant,
+inside the site. Applied to the fourteen scenes that is 3 vessels on
+01 Sep (3 of 3 found, 100%), 2 on 02 Sep, and 0–1 everywhere else — so
+thirteen scenes show "not measurable". The section 17 fallback to the
+padded box does not help: it adds one vessel on 14 Aug and one on 26 Aug,
+still below three. Built to the spec's rule and left the flag at `site`;
+the choice of a wider time window (the scene's day, as JOURNAL.md first
+phrased it, gives 1–29 events per scene) is the owner's, not made here.
+
+## 2026-09-16 · M6 · Where "panel header" is
+
+Section 10 says the ratio is shown "in the panel header" and repeated under
+every verdict. It sits directly under the selected scene's product name and
+"Radar acquired at…" note — the per-scene header of the panel — and again
+at the foot of the Verdict section once there is a verdict. One component,
+`panel/Confidence.tsx`, rendered twice; the section 17 flag lives there.
+
+## 2026-09-16 · M6 · GFW squares are a second SDF icon
+
+MapLibre's circle layer cannot draw squares, so the GFW layer is a symbol
+layer using a 6 px square built by the same signed-distance rasteriser as
+the AIS triangle (`sdfIcon` in `map/ais.ts`). Squares are smaller than the
+AIS markers and drawn beneath them; hover shows a MapLibre popup with the
+four facts of 7.4 and nothing else.

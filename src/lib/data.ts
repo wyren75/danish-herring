@@ -45,6 +45,28 @@ export interface Snapshot {
   dt_after_s: number | null
 }
 
+// Global Fishing Watch apparent-fishing events (section 5.1). `inside_site`
+// was tested against the site polygon at ingestion; the events themselves
+// were fetched for the box.
+export interface GfwEvent {
+  event_id: string
+  start: string // ISO-8601, UTC
+  end: string
+  lat: number
+  lon: number
+  inside_site: boolean
+  mmsi: string
+  vessel_name: string | null
+  flag: string | null
+  gfw_vessel_id: string | null
+  avg_speed_kn: number | null
+  distance_km: number | null
+  dist_port_km: number | null
+  dist_shore_km: number | null
+  mpa_tags: string | null
+  site_code: string
+}
+
 // Supabase returns at most 1000 rows per request regardless of `limit`.
 // Page with a stable ordering until a short page comes back.
 const PAGE = 1000
@@ -66,6 +88,8 @@ export const loadVessels = () => fetchAll<Vessel>('vessels', ['mmsi'])
 // ~1,400 rows across all 14 scenes: small enough to hold in memory, so
 // switching scene never waits on the network.
 export const loadSnapshots = () => fetchAll<Snapshot>('snapshots', ['scene_id', 'mmsi'])
+// ~2,200 rows over 18 months, loaded once at startup (section 5.3).
+export const loadGfwEvents = () => fetchAll<GfwEvent>('gfw_fishing_events', ['start', 'event_id'])
 
 export async function loadSite(): Promise<SiteGeometry> {
   const res = await fetch('/site.geojson')

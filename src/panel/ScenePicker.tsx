@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { Scene } from '../lib/data'
 import { utcDate, utcTime, utcTimeSeconds } from '../lib/format'
 
@@ -6,6 +6,9 @@ interface Props {
   scenes: Scene[]
   selectedId: string | null
   onSelect: (sceneId: string) => void
+  // Rendered under the selected scene's details: the confidence ratio,
+  // shown once per scene (section 10).
+  children?: ReactNode
 }
 
 // Counts are precomputed at ingestion inside the SITE polygon (SPEC.md
@@ -28,7 +31,7 @@ const dots = (scene: Scene) =>
     Math.min(4, Math.round((scene.n_fishing_in_site + scene.n_trawling_in_site) / 2.5)),
   )
 
-export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
+export default function ScenePicker({ scenes, selectedId, onSelect, children }: Props) {
   const rows = useMemo(() => rankScenes(scenes), [scenes])
   const selected = rows.find((s) => s.scene_id === selectedId)
 
@@ -68,6 +71,7 @@ export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
             Radar acquired at {utcTimeSeconds(selected.acq_mid)}. AIS interpolated to this
             second.
           </p>
+          {children}
         </div>
       )}
     </section>

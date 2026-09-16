@@ -1,5 +1,6 @@
 // Sentinel Hub WMS URL builders (SPEC.md sections 6.2 and 7.1).
 import type { Scene } from './data'
+import { parseUtc } from './format'
 
 const INSTANCE_ID = import.meta.env.VITE_SH_INSTANCE_ID
 const LAYER_S1 = import.meta.env.VITE_SH_LAYER_S1
@@ -16,10 +17,6 @@ const WINDOW_MS = 60_000
 
 /** ISO-8601 UTC without milliseconds: "2026-05-26T05:31:10Z". */
 const isoZ = (ms: number) => new Date(ms).toISOString().replace(/\.\d{3}Z$/, 'Z')
-
-// Supabase timestamps carry microseconds ("...59.497005+00:00"); trim to
-// milliseconds, the most Date.parse is guaranteed to accept.
-const parseUtc = (iso: string) => Date.parse(iso.replace(/(\.\d{3})\d+/, '$1'))
 
 /** "{acq_start − 60 s}/{acq_end + 60 s}" — the TIME parameter of section 7.1. */
 export function sceneTimeWindow(scene: Scene): string {

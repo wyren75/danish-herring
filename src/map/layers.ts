@@ -52,6 +52,8 @@ export const IDS = {
   s1: 's1',
   site: 'site',
   siteLabel: 'site-label',
+  gfw: 'gfw', // layer 5: one square per GFW event on the scene's day
+  gfwIcon: 'gfw-square',
   ais: 'ais', // layer 6: one source, triangles for moving vessels, dots for the rest
   aisTri: 'ais-tri',
   aisDot: 'ais-dot',

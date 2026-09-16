@@ -442,3 +442,71 @@ body {
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
   filter: invert(0.85);
 }
+
+/* Confidence ratio (section 10): under the scene details and under every
+   verdict. */
+.confidence {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.confidence p {
+  margin: 0 0 4px;
+}
+
+.confidence-headline {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.verdict .confidence {
+  margin-top: 12px;
+}
+
+/* Symbols legend (7.3): closed by default, at the bottom of Layers. */
+.legend {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend summary {
+  cursor: pointer;
+  color: var(--text);
+}
+
+.legend ul {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.legend-glyph {
+  flex: none;
+}
+
+/* GFW hover tooltip (7.4): a MapLibre popup in the panel's colours. */
+.gfw-tip .maplibregl-popup-content {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: none;
+}
+
+.gfw-tip .maplibregl-popup-tip {
+  display: none;
+}
