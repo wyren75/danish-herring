@@ -772,43 +772,113 @@ ship without M4–M6.
 
 ---
 
-## 13. UI layout
+## 13. UI layout — v1 (16 September; v0 tagged `v0-mvp`)
+
+v0 put setup, action and result in one 320 px column. Reviewed live: the
+verdict sat below the fold, the scene list occupied the top permanently, and
+at narrower windows the fixed initial view opened on Jutland's fields with
+the site pushed to the edge. v1 separates the three jobs into the three
+places the eye expects them. **No logic changes** — every component exists;
+this is placement.
+
+### 13.1 The three principles
+
+- **Progressive disclosure** — a control appears when it becomes relevant.
+- **Result beside the action** — the answer to a click appears where the
+  eye already is, not down a sidebar.
+- **Map furniture on the map** — layers and legend belong to the map,
+  top-right, collapsible, as on every map product people already know.
+
+### 13.2 The layout
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│  SONAR   Hirsholmene · Kattegat            [ Map ] [ Observation ]   │
-├──────────────────┬───────────────────────────────────────────────────┤
-│ SCENES           │                                                   │
-│ ● 26 May 05:32   │                                                   │
-│   20 · 14 fish   │                                                   │
-│ ● 11 Aug 17:10   │              MAP                                  │
-│   28 · 15 fish   │        (radar over dark basemap,                  │
-│ ● ...            │         site outline, markers)                    │
-│                  │                                                   │
-│ LAYERS           │                                                   │
-│ [x] Radar S1     │                                                   │
-│ [ ] Optical S2   │                                                   │
-│ [ ] AIS vessels  │                                                   │
-│ [ ] GFW fishing  │                                                   │
-│  Reveal all      │                                                   │
-│                  │                                                   │
-│ RADIUS  ──●── 500 m                                                  │
-│                  │                                                   │
-│ VERDICT          │                                                   │
-│ (matched /       │                                                   │
-│  unmatched panel)│                                                   │
-│                  │                                                   │
-│ AIS coverage 94% │                                                   │
-├──────────────────┴───────────────────────────────────────────────────┤
-│ Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global   │
-│ Fishing Watch · EEA Natura 2000 · © OpenStreetMap © CARTO            │
-└──────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ DANISH HERRING  Hirsholmene · Kattegat   ◀ 02 Sep 05:31 UTC ▾ ▶   Map │ Observation
+│ S1C_IW_GRDH_… · acquired 05:31:38 UTC · in site: Danish AIS 6 · GFW 2  │
+├────────────────────────────────────────────────────────┬───────────────┤
+│                                              ┌───────┐ │ VERDICT     ✕ │
+│                                              │Layers▾│ │               │
+│                                              └───────┘ │ KAREN MARIE   │
+│                     MAP — full width                   │ Fishing · DNK │
+│                                                        │ 05:31:38 UTC  │
+│      ┌──────────────────────────────────────┐          │ 3.1 kn · 214° │
+│      │ click a bright dot inside the orange │          │ offset 137 m  │
+│      │ line — first visit only              │          │ in site: yes  │
+│      └──────────────────────────────────────┘          │               │
+│                                                        │ GFW: fishing  │
+│                                                        │  since 03:50  │
+│                                                        │ 23 events ·   │
+│                                                        │  9 in site    │
+│                                                        │               │
+│                                                        │ radius ─●─ 500│
+├────────────────────────────────────────────────────────┴───────────────┤
+│ Data: Copernicus Sentinel-1/2 · DMA · GFW · EEA Natura 2000 · OpenFreeMap │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-Left panel fixed width 320 px, scrollable. Map fills the rest. Dark theme
-throughout: background `#0b0e14`, panel `#131720`, text `#e6e8ee`, accent
-orange `#f5a524` for fishing and the site outline, muted `#8a90a0` for
-secondary text. No gradients.
+### 13.3 Top bar — setup
+
+Two rows, full width, fixed.
+
+**Row 1.** Title left. Centre: the **scene stepper** — `◀`, the current
+scene as `02 Sep 2026 · 05:31 UTC · 6 fishing · 4 trawling ●●●●`, `▶`. The
+scene text is a button that opens a dropdown listing all scenes in the
+section-8 order, same row format. `←` / `→` keys step. Right: the two tabs.
+
+**Row 2**, smaller and muted: product name in monospace · *"acquired
+05:31:38 UTC — AIS interpolated to this second"* · the two-count line from
+10.1 in one line: *"in site: Danish AIS 6 fishing · GFW 2 in event"*. The
+(i) tooltips from 10.1 stay on this row.
+
+The 14-row list is gone from permanent view. The user chooses once.
+
+### 13.4 Map — full width, fitted to the site
+
+The map fills everything between the top bar and the footer, minus the
+inspector when open. **Initial view: `fitBounds` on the site polygon's
+bounds with 60 px padding**, recomputed on window resize — never a fixed
+centre and zoom. Zoom limits 9–14 stay. Zoom control top-right as now.
+
+**Layers card** floats top-right, directly under the zoom control, 220 px
+wide, dark panel colour at 92% opacity. Collapsed it shows only `Layers ▾`.
+Expanded: Radar S1, Optical S2 (with its date/cloud note or disabled
+reason), AIS vessels, GFW fishing events, the *Reveal all* button, and the
+collapsible *Symbols* legend. Everything that was in the old Layers section,
+nothing more. Collapsed by default; remembers its state for the session.
+
+**First-visit hint**: a single line centred on the map, in a rounded dark
+pill — *"Pick a scene above, then click a bright dot inside the orange
+line."* Disappears on the first map click and does not return.
+
+### 13.5 Inspector — result, on the right, only when there is one
+
+Hidden until the first click. On click it **slides in from the right**,
+340 px, and the map narrows to make room (not an overlay). Contents, top to
+bottom:
+
+1. Header: *Verdict* and a `✕` that clears the click and hides the panel.
+2. The matched or unmatched panel from section 9 — unchanged.
+3. The GFW context and history lines from 10.2 — unchanged.
+4. **The radius slider**, moved here from the global controls, because the
+   radius only modifies this verdict. Label: *matching radius*.
+5. The 9.3 explanatory block, on unmatched only, collapsible.
+
+Selecting a different scene clears the click and closes the inspector. The
+`✕` and `Esc` do the same. The panel is a live region for screen readers,
+as now.
+
+### 13.6 What does not change
+
+Footer attribution. The Observation tab. All colours: background `#0b0e14`,
+panel `#131720`, text `#e6e8ee`, orange `#f5a524`, blue `#4fb3ff`, muted
+`#8a90a0`. No gradients. Desktop only — below 1100 px wide the inspector
+may overlay the map instead of narrowing it; nothing else is required.
+
+### 13.7 Milestone
+
+| M | Build | Done when |
+|---|---|---|
+| **M10** | The v1 layout, sections 13.3–13.5. Move, don't rewrite: reuse `ScenePicker`, `Layers`, `Verdict`, `Radius`, `SceneCounts` as they are, re-parented. | On load the whole orange outline is visible regardless of window width and the hint shows; the top bar steps scenes with ◀ ▶ and arrow keys; the map has no sidebar; Layers opens from the map's top-right; a click slides the inspector in with verdict, GFW lines and the radius slider; `✕` closes it. Every M4–M8 check still passes. |
 
 ---
 
