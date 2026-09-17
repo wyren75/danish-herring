@@ -957,6 +957,91 @@ independently.
 the scene stepper, since it describes what the stepper selected. Row 1
 keeps title left and tabs right.
 
+### 13.10 M11 — the welcome (17 Sept)
+
+| M | Build | Done when |
+|---|---|---|
+| **M11** | A two-page welcome dialog shown on first visit, reopenable from a book icon bottom-left. Copy exactly as below. | First load shows page 1 centred over the map; *Next* shows page 2; *Start* closes it and the hint pill appears; reloading does not show it again; the book icon reopens it at page 1; `Esc` closes. |
+
+**Behaviour.** A centred modal over a dimmed map, max width 600 px, panel
+colour, 12 px corners, generous padding and line height (1.6). Two pages
+with a small two-dot indicator at the foot. Page 1 has one button, *How to
+find a boat →*. Page 2 has *← Back* and *Start*. `Esc` closes on either
+page. Dismissal is remembered in `localStorage` (wrapped in try/catch) so it
+shows once per browser; the book icon — an open-book glyph, 36 px, bottom
+left of the map, tooltip *About Danish Herring* — reopens it at page 1 any
+time. The first-visit hint pill (13.4) appears only after the dialog closes.
+A subtle fade-in, 200 ms; nothing else animates. The heading is orange;
+body text is `#e6e8ee`; the two proper nouns that are links are underlined
+on hover only.
+
+**Page 1**
+
+> # Welcome to Danish Herring
+> *Radar, AIS and a protected sea — a game about finding boats.*
+>
+> Hirsholmene is a scatter of islands off Frederikshavn, in the Kattegat: a
+> reserve for seals and seabirds, and a Natura 2000 site protected under
+> European law. It is also trawled. That isn't a secret. The designation
+> protects habitats and species, but fishing is regulated separately, and
+> for most of Europe's marine sites nobody has ever restricted it.
+> Campaigners have a name for this: *paper parks*. This app takes one of
+> them as its case study.
+>
+> It works by crossing three records that were never designed to meet —
+> radar images from [Copernicus Sentinel-1](https://dataspace.copernicus.eu),
+> the Danish Maritime Authority's official AIS log, and fishing events
+> classified by [Global Fishing Watch](https://globalfishingwatch.org) — and
+> lets you do something oddly satisfying with them: look at a radar picture,
+> spot a bright dot inside the protected boundary, click it, and learn which
+> boat it was, what it was doing, and whether anyone had noticed.
+>
+> It's deliberately a game. Geospatial data makes far more sense when you're
+> hunting for something.
+>
+> A few honest limits. The satellite passes at fixed hours, so you see the
+> fleet at dawn and dusk, never midday. The scenes run from 13 August to
+> 8 September 2026, when the fishing was busiest. At ten metres a pixel,
+> small boats don't show. And AIS is only what a vessel chooses to declare —
+> which is rather the point.
+>
+> **[ How to find a boat → ]**
+
+**Page 2**
+
+> # How to find a boat
+>
+> **1 · Pick a moment.** The selector at the top lists fourteen radar
+> passes, busiest first. The line beneath says how many fishing vessels were
+> inside the site at that exact second.
+>
+> **2 · Look at the radar.** The sea is black; steel is bright. Zoom into
+> the orange boundary and look for dots.
+>
+> **3 · Click one.** The panel on the right gives its verdict — a name, a
+> flag, a length, a speed — or no AIS contact at all, and what that can mean.
+> The small gap between the dot and the AIS position is physics, not a bug;
+> hover the (i).
+>
+> **4 · Ask what it was doing.** The Global Fishing Watch section tells you
+> whether that boat was fishing at that moment, shortly before or after, and
+> how often it has been inside the site.
+>
+> **5 · Check your work.** Open *Layers* to reveal every AIS vessel, show
+> GFW's fishing areas, or switch to the optical photo on a clear day. The
+> *Legend* explains the symbols.
+>
+> Then visit **Observation** for the bigger question: how often do
+> satellites actually look at a protected sea? Here, every 1.7 days. At a
+> World Heritage site in West Africa, every twelve.
+>
+> Now go and find a boat.
+>
+> **[ ← Back ]  [ Start ]**
+
+A line of small muted text at the foot of both pages: *Open data · built
+with AI assistance · [about this project]* linking to the GitHub README.
+
 ---
 
 ## 14. Non-functional requirements

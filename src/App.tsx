@@ -29,6 +29,7 @@ import MapControls from './panel/MapControls'
 import SceneCounts from './panel/SceneCounts'
 import { rankScenes } from './panel/ScenePicker'
 import TopBar from './panel/TopBar'
+import Welcome, { AboutButton, welcomeDismissed } from './panel/Welcome'
 
 export const APP_NAME = 'Danish Herring'
 
@@ -65,7 +66,10 @@ export default function App() {
   // Click state (section 9): where the user clicked, and the matching radius.
   const [click, setClick] = useState<LonLat | null>(null)
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
-  // The first-visit hint (13.4) goes on the first map click and stays gone.
+  // The welcome (13.10) shows once per browser; the book icon reopens it.
+  const [welcome, setWelcome] = useState(() => !welcomeDismissed())
+  // The first-visit hint (13.4) waits for the welcome to close, goes on the
+  // first map click and stays gone.
   const [hint, setHint] = useState(true)
 
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
@@ -118,6 +122,8 @@ export default function App() {
     setClick(null)
   }, [])
   const clearClick = useCallback(() => setClick(null), [])
+  const openWelcome = useCallback(() => setWelcome(true), [])
+  const closeWelcome = useCallback(() => setWelcome(false), [])
   const mapClick = useCallback((lonLat: LonLat) => {
     setHint(false)
     setClick(lonLat)
@@ -232,11 +238,13 @@ export default function App() {
               legendControl,
             ]}
           />
-          {hint && (
+          <AboutButton onClick={openWelcome} />
+          {hint && !welcome && (
             <p className="hint">
               Pick a scene above, then click a bright dot inside the orange line.
             </p>
           )}
+          <Welcome open={welcome} onClose={closeWelcome} />
         </main>
         {data && scene && (
           <Inspector
