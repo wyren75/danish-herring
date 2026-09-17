@@ -849,6 +849,7 @@ nothing more. Collapsed by default; remembers its state for the session.
 **First-visit hint**: a single line centred on the map, in a rounded dark
 pill — *"Pick a scene above, then click a bright dot inside the orange
 line."* Disappears on the first map click and does not return.
+**Removed 17 Sept (13.12)** — the welcome dialog says this already.
 
 ### 13.5 Inspector — result, on the right, only when there is one
 
@@ -1084,6 +1085,10 @@ Reverses "collapsed by default" in 13.8 and 13.9. When the user arrives
 menus on the left are seen at once; Legend stays closed, since only one
 card opens at a time (13.11). The user may close both. The choice is
 remembered for the session as before.
+
+**Hint pill removed.** The first-visit hint of 13.4 no longer exists; the
+welcome's page 2 carries the same instruction. Nothing appears on the map
+after *Start*.
 
 ---
 

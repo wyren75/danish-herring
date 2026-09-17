@@ -68,9 +68,6 @@ export default function App() {
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
   // The welcome (13.10) shows once per browser; the book icon reopens it.
   const [welcome, setWelcome] = useState(() => !welcomeDismissed())
-  // The first-visit hint (13.4) waits for the welcome to close, goes on the
-  // first map click and stays gone.
-  const [hint, setHint] = useState(true)
 
   // Everything the browser needs is read once, in parallel (SPEC.md 5.3).
   useEffect(() => {
@@ -124,10 +121,7 @@ export default function App() {
   const clearClick = useCallback(() => setClick(null), [])
   const openWelcome = useCallback(() => setWelcome(true), [])
   const closeWelcome = useCallback(() => setWelcome(false), [])
-  const mapClick = useCallback((lonLat: LonLat) => {
-    setHint(false)
-    setClick(lonLat)
-  }, [])
+  const mapClick = useCallback((lonLat: LonLat) => setClick(lonLat), [])
 
   // What the map fits to (13.4): the site polygon's bounds.
   const siteBounds = useMemo(() => (data ? bounds(data.site) : null), [data])
@@ -239,11 +233,6 @@ export default function App() {
             ]}
           />
           <AboutButton onClick={openWelcome} />
-          {hint && !welcome && (
-            <p className="hint">
-              Pick a scene above, then click a bright dot inside the orange line.
-            </p>
-          )}
           <Welcome open={welcome} onClose={closeWelcome} />
         </main>
         {data && scene && (

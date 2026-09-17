@@ -665,27 +665,9 @@ body {
   padding: 6px 10px 10px;
 }
 
-/* First-visit hint (13.4): one line in a pill, centred on the map. */
-.hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  padding: 8px 16px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: rgba(19, 23, 32, 0.92);
-  color: var(--text);
-  font-size: 13px;
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 1;
-}
-
 /* The welcome (13.10): a centred modal over the dimmed map, once per
-   browser, reopened from the book icon bottom-left. Above the controls and
-   the hint; the top bar keeps its own stacking above the map. */
+   browser, reopened from the book icon bottom-left. Above the controls;
+   the top bar keeps its own stacking above the map. */
 .about-button {
   position: absolute;
   bottom: 10px;
