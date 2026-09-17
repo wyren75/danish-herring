@@ -977,16 +977,16 @@ on hover only.
 
 **Page 1**
 
-> # Welcome to Danish Herring
+> # Welcome to Danish Herring!
 > *Radar, AIS and a protected sea — a game about finding boats.*
 >
-> Hirsholmene is a scatter of islands off Frederikshavn, in the Kattegat: a
-> reserve for seals and seabirds, and a Natura 2000 site protected under
-> European law. It is also trawled. That isn't a secret. The designation
-> protects habitats and species, but fishing is regulated separately, and
-> for most of Europe's marine sites nobody has ever restricted it.
-> Campaigners have a name for this: *paper parks*. This app takes one of
-> them as its case study.
+> Hirsholmene is a scatter of islands off Frederikshavn, on Denmark's
+> Kattegat coast: a reserve for seals and seabirds, and a Natura 2000 site
+> protected under European law. It is also trawled. That isn't a secret.
+> The designation protects habitats and species, but fishing is regulated
+> separately, and for most of Europe's marine sites nobody has ever
+> restricted it. Campaigners have a name for this: *paper parks*. This app
+> takes one of them as its case study — and hands you the satellite.
 >
 > It works by crossing three records that were never designed to meet —
 > radar images from [Copernicus Sentinel-1](https://dataspace.copernicus.eu),
@@ -997,7 +997,7 @@ on hover only.
 > boat it was, what it was doing, and whether anyone had noticed.
 >
 > It's deliberately a game. Geospatial data makes far more sense when you're
-> hunting for something.
+> hunting for something — and there is a lot of it here to hunt through.
 >
 > A few honest limits. The satellite passes at fixed hours, so you see the
 > fleet at dawn and dusk, never midday. The scenes run from 13 August to
@@ -1005,18 +1005,20 @@ on hover only.
 > small boats don't show. And AIS is only what a vessel chooses to declare —
 > which is rather the point.
 >
-> **[ How to find a boat → ]**
+> **[ How to find a boat? → ]**
 
 **Page 2**
 
-> # How to find a boat
+> # How to find a boat?
 >
 > **1 · Pick a moment.** The selector at the top lists fourteen radar
 > passes, busiest first. The line beneath says how many fishing vessels were
 > inside the site at that exact second.
 >
-> **2 · Look at the radar.** The sea is black; steel is bright. Zoom into
-> the orange boundary and look for dots.
+> **2 · Look at the radar.** This isn't a photo, and it isn't night: the
+> satellite sends its own radar pulse. Calm water bounces it away and shows
+> black; a steel hull throws it straight back and shows bright — cloud or
+> no cloud. Zoom into the orange boundary and look for white dots.
 >
 > **3 · Click one.** The panel on the right gives its verdict — a name, a
 > flag, a length, a speed — or no AIS contact at all, and what that can mean.
@@ -1033,14 +1035,47 @@ on hover only.
 >
 > Then visit **Observation** for the bigger question: how often do
 > satellites actually look at a protected sea? Here, every 1.7 days. At a
-> World Heritage site in West Africa, every twelve.
+> World Heritage site in West Africa, every 12.
 >
-> Now go and find a boat.
+> Somewhere in that black water, a boat is waiting to be named. Go and
+> find it!
 >
 > **[ ← Back ]  [ Start ]**
 
+(Closing line — alternatives if the one above doesn't sit right:
+*"The fleet is out there. Your move."* or *"Your first boat is out there.
+Go and find it!"*)
+
 A line of small muted text at the foot of both pages: *Open data · built
-with AI assistance · [about this project]* linking to the GitHub README.
+with AI assistance · [about this project] · questions: mfresque@gmail.com*
+— the first link to the GitHub README, the email as a `mailto:` link.
+
+**Links** in the body (Copernicus Sentinel-1, Global Fishing Watch) are
+always underlined, in the muted colour, brightening on hover — not
+hover-only, which hides that they are links at all.
+
+### 13.11 M11b — copy revision, mutual exclusion, the herring mark (17 Sept)
+
+| M | Build | Done when |
+|---|---|---|
+| **M11b** | The revised welcome copy above; Layers and Legend mutually exclusive; the herring mark in the top bar and the welcome heading. | Opening Legend while Layers is open closes Layers, and vice versa, each card aligned with its own icon; the mark appears at 22 px left of the title and at ~40 px beside the welcome heading. |
+
+**Layers / Legend.** Only one card open at a time. Clicking the other icon
+closes the open card and opens the new one, positioned beside its own icon.
+Clicking the open card's icon closes it. Nothing else changes.
+
+**The herring mark.** Two raster images made by the owner (17 Sept), a
+matched pair: a painted silver herring and a flat orange silhouette, both
+in the same dark rounded square with a thin gold frame.
+
+- `public/herring-painted.png` — beside the welcome heading, 56 px.
+- `public/herring-flat.png` — top bar, left of the title, 28 px, vertically
+  centred, 8 px gap. If the fish smears at that size, replace with a
+  frameless transparent version at 22 px.
+- `public/favicon-32.png` and `public/favicon-180.png` — the flat framed
+  icon, as favicon and apple-touch-icon.
+
+No SVG; the earlier drawn mark is superseded.
 
 ---
 
