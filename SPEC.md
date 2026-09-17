@@ -935,6 +935,28 @@ colour names, no descriptions:
 ▭ (dashed orange)  GFW fishing event area
 ```
 
+### 13.9 M10c — second live review (17 Sept)
+
+| M | Build | Done when |
+|---|---|---|
+| **M10c** | Three adjustments below. | On load both map controls are icons only; clicking each opens its card and clicking again closes it; row 2 sits centred under the scene stepper. |
+
+**Layers collapsed by default.** As 13.8 states: on load, the icon only.
+If it currently opens expanded, that is a defect. Remember open/closed for
+the session as now.
+
+**Legend is its own control.** Remove *Symbols* from the Layers card. Add a
+second icon button directly below the Layers icon, same size and style,
+tooltip *Legend*, glyph: three short horizontal rows each preceded by a
+small dot (the conventional "key" mark — not a question mark, which reads
+as help). Collapsed by default. Expanded: the six-line legend from 13.8,
+same 220 px card, opening to the right. Layers and Legend open and close
+independently.
+
+**Row 2 centred.** The sentence in row 2 is centred horizontally beneath
+the scene stepper, since it describes what the stepper selected. Row 1
+keeps title left and tabs right.
+
 ---
 
 ## 14. Non-functional requirements
