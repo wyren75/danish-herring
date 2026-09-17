@@ -23,7 +23,9 @@ import MapView from './map/Map'
 import { BASEMAP } from './map/layers'
 import Observation from './observation/Observation'
 import Inspector from './panel/Inspector'
-import LayersCard from './panel/LayersCard'
+import { layersControl } from './panel/LayersControl'
+import { legendControl } from './panel/LegendControl'
+import MapControls from './panel/MapControls'
 import SceneCounts from './panel/SceneCounts'
 import { rankScenes } from './panel/ScenePicker'
 import TopBar from './panel/TopBar'
@@ -212,18 +214,23 @@ export default function App() {
             verdict={verdict}
             onClick={mapClick}
           />
-          <LayersCard
-            showRadar={showRadar}
-            onShowRadar={setShowRadar}
-            scene={scene}
-            s2={s2}
-            showS2={showS2}
-            onShowS2={setShowS2}
-            showAis={showAis}
-            onShowAis={setShowAis}
-            onReveal={reveal}
-            showGfw={showGfw}
-            onShowGfw={setShowGfw}
+          <MapControls
+            controls={[
+              layersControl({
+                showRadar,
+                onShowRadar: setShowRadar,
+                scene,
+                s2,
+                showS2,
+                onShowS2: setShowS2,
+                showAis,
+                onShowAis: setShowAis,
+                onReveal: reveal,
+                showGfw,
+                onShowGfw: setShowGfw,
+              }),
+              legendControl,
+            ]}
           />
           {hint && (
             <p className="hint">

@@ -46,17 +46,28 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+/* Three columns of equal slack so the stepper is centred on the bar
+   whatever the title and tabs measure; row 2 then centres beneath it. */
 .topbar-row1 {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr max-content 1fr;
   align-items: center;
   gap: 12px;
   height: 44px;
   padding: 0 16px;
 }
 
+.title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
 .topbar-row2 {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   height: 28px;
   padding: 0 16px;
@@ -74,7 +85,6 @@ body {
    row 1. */
 .stepper {
   position: relative;
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: stretch;
@@ -161,8 +171,7 @@ body {
 
 /* Map / Observation tabs (section 13). */
 .tabs {
-  flex: none;
-  margin-left: auto;
+  justify-self: end;
   display: flex;
   gap: 4px;
   align-self: stretch;
@@ -196,7 +205,7 @@ body {
 .stepper-menu h2,
 .inspector h2,
 .radius h2,
-.layers-panel h2 {
+.control-panel h2 {
   margin: 0 0 8px;
   font-size: 11px;
   font-weight: 600;
@@ -588,48 +597,51 @@ body {
   min-height: 0;
 }
 
-/* Layers control (13.8): an icon button top-left of the map. Expanded, the
-   220 px card opens to the right of the icon, panel colour at 92 %. */
-.layers-card {
+/* Map controls (13.8, 13.9): a column of icon buttons top-left of the map,
+   Layers then Legend, and beside it the column their 220 px cards open
+   into — panel colour at 92 %, each independently of the other. */
+.map-controls {
   position: absolute;
   top: 10px;
   left: 10px;
   z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
 
-.layers-icon {
+.control-icons,
+.control-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 3px;
   background: rgba(19, 23, 32, 0.92);
   color: var(--text);
-  list-style: none;
   cursor: pointer;
-  user-select: none;
 }
 
-.layers-icon::-webkit-details-marker {
-  display: none;
-}
-
-.layers-icon:hover,
-.layers-card[open] .layers-icon {
+.control-icon:hover,
+.control-icon--open {
   color: var(--accent);
 }
 
-.layers-icon:focus-visible {
+.control-icon:focus-visible {
   outline: 1px solid var(--accent);
   outline-offset: -1px;
 }
 
-.layers-panel {
-  position: absolute;
-  top: 0;
-  left: 42px;
+.control-panel {
   width: 220px;
   border: 1px solid var(--border);
   border-radius: 3px;
@@ -637,7 +649,7 @@ body {
   font-size: 13px;
 }
 
-.layers-panel h2 {
+.control-panel h2 {
   margin: 0;
   padding: 8px 10px 6px;
   border-bottom: 1px solid var(--border);
@@ -799,22 +811,13 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Symbols legend (7.3): closed by default, at the bottom of Layers. */
+/* Legend (13.9): the six lines in their own card. */
 .legend {
-  margin-top: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 6px 10px 10px;
   font-size: 12px;
   color: var(--muted);
-}
-
-.legend summary {
-  cursor: pointer;
-  color: var(--text);
-}
-
-.legend ul {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
 }
 
 .legend li {

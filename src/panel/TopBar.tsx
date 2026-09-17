@@ -13,16 +13,19 @@ interface Props {
   loadError: string | null
 }
 
-// The top bar (13.3): setup. Row 1 — title, the scene stepper, the tabs.
-// Row 2 — the acquisition instant and the two counts at it, as one sentence.
+// The top bar (13.3): setup. Row 1 — title left, the scene stepper centred,
+// the tabs right. Row 2 — the acquisition instant and the two counts at it,
+// as one sentence, centred beneath the stepper (13.9).
 // The product name is not here (13.8): it is the stepper's tooltip and the
 // inspector's footer.
 export default function TopBar({ title, scenes, scene, onSelect, tabs, counts, loadError }: Props) {
   return (
     <header className="topbar">
       <div className="topbar-row1">
-        <span className="brand">{title}</span>
-        <span className="subtitle">Hirsholmene · Kattegat</span>
+        <span className="title">
+          <span className="brand">{title}</span>
+          <span className="subtitle">Hirsholmene · Kattegat</span>
+        </span>
         <SceneStepper scenes={scenes} selectedId={scene?.scene_id ?? null} onSelect={onSelect} />
         {tabs}
       </div>

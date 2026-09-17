@@ -1,7 +1,5 @@
-import type { ReactNode } from 'react'
 import type { Scene } from '../lib/data'
 import { s2PassLabel, s2Reason, type S2Pick } from '../lib/s2'
-import { COLORS } from '../map/layers'
 import Tip from './Tip'
 
 interface Props {
@@ -71,78 +69,6 @@ export default function Layers({
         <input type="checkbox" checked={showGfw} onChange={(e) => onShowGfw(e.target.checked)} />
         GFW fishing events
       </label>
-      <Legend />
     </section>
   )
 }
-
-// The Symbols legend (7.3, worded in 13.8): collapsible, closed by default,
-// six lines — a glyph and a label of at most four words, nothing else.
-// Glyphs are inline SVG drawn to match the map markers.
-function Legend() {
-  return (
-    <details className="legend">
-      <summary>Symbols</summary>
-      <ul>
-        <li>
-          <Glyph>
-            <polygon points="8,3 11.5,13 4.5,13" fill={COLORS.accent} />
-          </Glyph>
-          Fishing vessel, under way
-        </li>
-        <li>
-          <Glyph>
-            <circle cx="8" cy="8" r="3" fill={COLORS.accent} />
-          </Glyph>
-          Fishing vessel, stopped
-        </li>
-        <li>
-          <Glyph>
-            <polygon points="8,3 11.5,13 4.5,13" fill={COLORS.other} />
-          </Glyph>
-          Other vessel
-        </li>
-        <li>
-          <Glyph>
-            <circle cx="8" cy="8" r="3" fill={COLORS.accent} stroke={COLORS.white} strokeWidth="2" />
-          </Glyph>
-          Inside the protected site
-        </li>
-        <li>
-          <Glyph>
-            <polygon
-              points="8,1 13,15 3,15"
-              fill={COLORS.accent}
-              stroke={COLORS.white}
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </Glyph>
-          Your match
-        </li>
-        <li>
-          <Glyph>
-            <rect
-              x="1.5"
-              y="3.5"
-              width="13"
-              height="9"
-              fill="none"
-              stroke={COLORS.accent}
-              strokeWidth="1.5"
-              strokeDasharray="3 2"
-            />
-            <rect x="7" y="7" width="2" height="2" fill={COLORS.accent} />
-          </Glyph>
-          GFW fishing event area
-        </li>
-      </ul>
-    </details>
-  )
-}
-
-const Glyph = ({ children }: { children: ReactNode }) => (
-  <svg className="legend-glyph" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-    {children}
-  </svg>
-)
