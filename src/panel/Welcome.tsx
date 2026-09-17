@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 // Where the README lives, for the foot line on both pages.
 const README_URL = 'https://github.com/wyren75/herring#readme'
 
+const CONTACT = 'mfresque@gmail.com'
+
 const STORAGE_KEY = 'welcome-dismissed'
 
 // Shown once per browser (13.10). localStorage may be blocked or full;
@@ -102,17 +104,23 @@ export default function Welcome({ open, onClose }: Props) {
       >
         {page === 1 ? (
           <>
-            <h1 id="welcome-title">Welcome to Danish Herring</h1>
-            <p className="welcome-tagline">
-              Radar, AIS and a protected sea — a game about finding boats.
-            </p>
+            <div className="welcome-head">
+              <img src="/herring-painted.png" width="56" height="56" alt="" />
+              <div>
+                <h1 id="welcome-title">Welcome to Danish Herring!</h1>
+                <p className="welcome-tagline">
+                  Radar, AIS and a protected sea — a game about finding boats.
+                </p>
+              </div>
+            </div>
             <p>
-              Hirsholmene is a scatter of islands off Frederikshavn, in the Kattegat: a reserve
-              for seals and seabirds, and a Natura 2000 site protected under European law. It is
-              also trawled. That isn't a secret. The designation protects habitats and species,
-              but fishing is regulated separately, and for most of Europe's marine sites nobody
-              has ever restricted it. Campaigners have a name for this: <em>paper parks</em>.
-              This app takes one of them as its case study.
+              Hirsholmene is a scatter of islands off Frederikshavn, on Denmark's Kattegat coast:
+              a reserve for seals and seabirds, and a Natura 2000 site protected under European
+              law. It is also trawled. That isn't a secret. The designation protects habitats and
+              species, but fishing is regulated separately, and for most of Europe's marine sites
+              nobody has ever restricted it. Campaigners have a name for this:{' '}
+              <em>paper parks</em>. This app takes one of them as its case study — and hands you
+              the satellite.
             </p>
             <p>
               It works by crossing three records that were never designed to meet — radar images
@@ -130,7 +138,7 @@ export default function Welcome({ open, onClose }: Props) {
             </p>
             <p>
               It's deliberately a game. Geospatial data makes far more sense when you're hunting
-              for something.
+              for something — and there is a lot of it here to hunt through.
             </p>
             <p>
               A few honest limits. The satellite passes at fixed hours, so you see the fleet at
@@ -140,21 +148,23 @@ export default function Welcome({ open, onClose }: Props) {
             </p>
             <div className="welcome-actions">
               <button type="button" className="welcome-button" onClick={() => setPage(2)}>
-                How to find a boat →
+                How to find a boat? →
               </button>
             </div>
           </>
         ) : (
           <>
-            <h1 id="welcome-title">How to find a boat</h1>
+            <h1 id="welcome-title">How to find a boat?</h1>
             <p>
               <strong>1 · Pick a moment.</strong> The selector at the top lists fourteen radar
               passes, busiest first. The line beneath says how many fishing vessels were inside
               the site at that exact second.
             </p>
             <p>
-              <strong>2 · Look at the radar.</strong> The sea is black; steel is bright. Zoom into
-              the orange boundary and look for dots.
+              <strong>2 · Look at the radar.</strong> This isn't a photo, and it isn't night: the
+              satellite sends its own radar pulse. Calm water bounces it away and shows black; a
+              steel hull throws it straight back and shows bright — cloud or no cloud. Zoom into
+              the orange boundary and look for white dots.
             </p>
             <p>
               <strong>3 · Click one.</strong> The panel on the right gives its verdict — a name, a
@@ -174,9 +184,9 @@ export default function Welcome({ open, onClose }: Props) {
             <p>
               Then visit <strong>Observation</strong> for the bigger question: how often do
               satellites actually look at a protected sea? Here, every 1.7 days. At a World
-              Heritage site in West Africa, every twelve.
+              Heritage site in West Africa, every 12.
             </p>
-            <p>Now go and find a boat.</p>
+            <p>Somewhere in that black water, a boat is waiting to be named. Go and find it!</p>
             <div className="welcome-actions">
               <button
                 type="button"
@@ -199,7 +209,8 @@ export default function Welcome({ open, onClose }: Props) {
           Open data · built with AI assistance ·{' '}
           <a href={README_URL} target="_blank" rel="noreferrer">
             about this project
-          </a>
+          </a>{' '}
+          · questions: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
         </p>
       </div>
     </div>

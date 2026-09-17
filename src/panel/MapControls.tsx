@@ -8,38 +8,47 @@ export interface Control {
   children: ReactNode
 }
 
-// Collapsed by default; remembered for the browser session (13.4, 13.9).
-const remembered = (key: string) => {
+// Which card is open is remembered for the browser session (13.4, 13.9);
+// nothing open by default.
+const OPEN_KEY = 'map-control-open'
+const remembered = (controls: Control[]) => {
   try {
-    return sessionStorage.getItem(key) === '1'
+    const i = controls.findIndex((c) => c.storageKey === sessionStorage.getItem(OPEN_KEY))
+    return i === -1 ? null : i
   } catch {
-    return false
+    return null
   }
 }
-const remember = (key: string, open: boolean) => {
+const remember = (key: string | null) => {
   try {
-    sessionStorage.setItem(key, open ? '1' : '0')
+    if (key === null) sessionStorage.removeItem(OPEN_KEY)
+    else sessionStorage.setItem(OPEN_KEY, key)
   } catch {
     // Storage blocked: the card still works, it just forgets.
   }
 }
 
+// Height of one icon plus the gap beneath it, so a card can line up with
+// its own icon. Matches .control-icon and .control-icons in index.css.
+const ICON_PITCH = 42
+
 interface Props {
   controls: Control[]
 }
 
-// Map furniture (13.8, 13.9): a column of 36 px icon buttons top-left of
-// the map. Collapsed, a control is its icon only, with a tooltip. Expanded,
-// its 220 px card opens to the right of the icon. Controls open and close
-// independently; the cards flow in one column beside the icons, so when
-// two are open the second sits under the first rather than over it.
+// Map furniture (13.8, 13.9, 13.11): a column of 36 px icon buttons
+// top-left of the map. Collapsed, a control is its icon only, with a
+// tooltip. Expanded, its 220 px card opens to the right, level with its
+// icon. Only one card is open at a time: clicking another icon closes the
+// open card and opens that one; clicking the open card's icon closes it.
 export default function MapControls({ controls }: Props) {
-  const [open, setOpen] = useState<boolean[]>(() => controls.map((c) => remembered(c.storageKey)))
+  const [open, setOpen] = useState<number | null>(() => remembered(controls))
   const toggle = (i: number) => {
-    const next = open.with(i, !open[i])
+    const next = open === i ? null : i
     setOpen(next)
-    remember(controls[i].storageKey, next[i])
+    remember(next === null ? null : controls[next].storageKey)
   }
+  const current = open === null ? null : controls[open]
   return (
     <div className="map-controls">
       <div className="control-icons">
@@ -47,10 +56,10 @@ export default function MapControls({ controls }: Props) {
           <button
             key={c.name}
             type="button"
-            className={'control-icon' + (open[i] ? ' control-icon--open' : '')}
+            className={'control-icon' + (open === i ? ' control-icon--open' : '')}
             title={c.name}
             aria-label={c.name}
-            aria-expanded={open[i]}
+            aria-expanded={open === i}
             aria-controls={`control-${c.storageKey}`}
             onClick={() => toggle(i)}
           >
@@ -58,27 +67,16 @@ export default function MapControls({ controls }: Props) {
           </button>
         ))}
       </div>
-      <div className="control-panels">
-        {controls.map(
-          (c, i) =>
-            open[i] && (
-              <section
-                key={c.name}
-                id={`control-${c.storageKey}`}
-                className="control-panel"
-                style={{ marginTop: firstOpenOffset(open, i) }}
-              >
-                <h2>{c.name}</h2>
-                {c.children}
-              </section>
-            ),
-        )}
-      </div>
+      {current && open !== null && (
+        <section
+          id={`control-${current.storageKey}`}
+          className="control-panel"
+          style={{ marginTop: open * ICON_PITCH }}
+        >
+          <h2>{current.name}</h2>
+          {current.children}
+        </section>
+      )}
     </div>
   )
 }
-
-// The first open card lines up with its own icon (36 px icon + 6 px gap
-// per control above it); the ones after flow under it.
-const firstOpenOffset = (open: boolean[], i: number) =>
-  open.slice(0, i).some(Boolean) ? undefined : i * 42

@@ -64,6 +64,13 @@ body {
   white-space: nowrap;
 }
 
+/* The flat herring (13.11): 28 px, left of the title, 8 px gap. */
+.mark {
+  flex: none;
+  margin-right: -4px;
+  border-radius: 5px;
+}
+
 .topbar-row2 {
   display: flex;
   align-items: center;
@@ -597,9 +604,9 @@ body {
   min-height: 0;
 }
 
-/* Map controls (13.8, 13.9): a column of icon buttons top-left of the map,
-   Layers then Legend, and beside it the column their 220 px cards open
-   into — panel colour at 92 %, each independently of the other. */
+/* Map controls (13.8, 13.9, 13.11): a column of icon buttons top-left of
+   the map, Layers then Legend, and beside it the one 220 px card that is
+   open — panel colour at 92 %, level with its own icon. */
 .map-controls {
   position: absolute;
   top: 10px;
@@ -610,8 +617,7 @@ body {
   gap: 6px;
 }
 
-.control-icons,
-.control-panels {
+.control-icons {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -733,6 +739,23 @@ body {
   color: var(--accent);
 }
 
+/* The painted herring (13.11) beside the welcome heading, 56 px. */
+.welcome-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.welcome-head img {
+  flex: none;
+  border-radius: 8px;
+}
+
+.welcome-head p {
+  margin: 0;
+}
+
 .welcome p {
   margin: 0 0 14px;
 }
@@ -741,14 +764,16 @@ body {
   font-style: italic;
 }
 
-/* The proper nouns that are links: underlined on hover only. */
+/* Links (13.11): always underlined, muted, brightening on hover — never
+   hover-only, which hides that they are links at all. */
 .welcome a {
-  color: inherit;
-  text-decoration: none;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .welcome a:hover {
-  text-decoration: underline;
+  color: var(--text);
 }
 
 .welcome-actions {

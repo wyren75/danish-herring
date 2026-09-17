@@ -13,8 +13,8 @@ interface Props {
   loadError: string | null
 }
 
-// The top bar (13.3): setup. Row 1 — title left, the scene stepper centred,
-// the tabs right. Row 2 — the acquisition instant and the two counts at it,
+// The top bar (13.3): setup. Row 1 — the herring mark and title left
+// (13.11), the scene stepper centred, the tabs right. Row 2 — the acquisition instant and the two counts at it,
 // as one sentence, centred beneath the stepper (13.9).
 // The product name is not here (13.8): it is the stepper's tooltip and the
 // inspector's footer.
@@ -23,6 +23,7 @@ export default function TopBar({ title, scenes, scene, onSelect, tabs, counts, l
     <header className="topbar">
       <div className="topbar-row1">
         <span className="title">
+          <img className="mark" src="/herring-flat.png" width="28" height="28" alt="" />
           <span className="brand">{title}</span>
           <span className="subtitle">Hirsholmene · Kattegat</span>
         </span>
