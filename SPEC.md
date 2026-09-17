@@ -1077,6 +1077,14 @@ in the same dark rounded square with a thin gold frame.
 
 No SVG; the earlier drawn mark is superseded.
 
+### 13.12 M11c — Layers open on arrival (17 Sept)
+
+Reverses "collapsed by default" in 13.8 and 13.9. When the user arrives
+(no choice yet made this session) the **Layers card is open**, so the two
+menus on the left are seen at once; Legend stays closed, since only one
+card opens at a time (13.11). The user may close both. The choice is
+remembered for the session as before.
+
 ---
 
 ## 14. Non-functional requirements

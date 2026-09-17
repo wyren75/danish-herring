@@ -8,21 +8,23 @@ export interface Control {
   children: ReactNode
 }
 
-// Which card is open is remembered for the browser session (13.4, 13.9);
-// nothing open by default.
+// Which card is open is remembered for the browser session (13.4, 13.9).
+// Until the user changes it, the first control (Layers) is open (13.12), so
+// the two menus are seen; a value of '' means the user closed both.
 const OPEN_KEY = 'map-control-open'
 const remembered = (controls: Control[]) => {
   try {
-    const i = controls.findIndex((c) => c.storageKey === sessionStorage.getItem(OPEN_KEY))
+    const key = sessionStorage.getItem(OPEN_KEY)
+    if (key === null) return 0
+    const i = controls.findIndex((c) => c.storageKey === key)
     return i === -1 ? null : i
   } catch {
-    return null
+    return 0
   }
 }
 const remember = (key: string | null) => {
   try {
-    if (key === null) sessionStorage.removeItem(OPEN_KEY)
-    else sessionStorage.setItem(OPEN_KEY, key)
+    sessionStorage.setItem(OPEN_KEY, key ?? '')
   } catch {
     // Storage blocked: the card still works, it just forgets.
   }
@@ -41,6 +43,7 @@ interface Props {
 // tooltip. Expanded, its 220 px card opens to the right, level with its
 // icon. Only one card is open at a time: clicking another icon closes the
 // open card and opens that one; clicking the open card's icon closes it.
+// Layers starts open; the user may close both.
 export default function MapControls({ controls }: Props) {
   const [open, setOpen] = useState<number | null>(() => remembered(controls))
   const toggle = (i: number) => {
