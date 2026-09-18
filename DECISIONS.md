@@ -1,7 +1,279 @@
 # Decisions
 
 Deviations from `SPEC.md` and choices the spec left open, with the reason.
-Newest last. See `JOURNAL.md` for the reasoning behind the spec itself.
+Newest last.
+
+The first section covers the feasibility work that produced the spec: which
+data sources were tried, which were rejected, and what was measured. Every
+figure below was measured with the scripts in `data/`, and every rejection
+was a measurement rather than an opinion.
+
+---
+
+# Feasibility · July – September 2026
+
+## 2026-07 · Concept · The first idea was a map of AIS ships; rejected
+
+The original concept was an OpenStreetMap basemap, a click to fetch vessels
+within 5 km from MarineTraffic, and the latest Sentinel-2 image, in real
+time. That product already exists: it is MarineTraffic and the Copernicus
+Browser open in two tabs. Reframed around the **discrepancy** instead —
+vessels visible to radar but absent from AIS — which is the question the
+data can answer and the tabs cannot.
+
+## 2026-07 · Data · MarineTraffic rejected: no self-serve API
+
+MarineTraffic is now owned by Kpler. The AIS API has no published per-call
+pricing and no self-serve tier; access is an enterprise subscription
+arranged by sales. Not viable for an individual project at any effort level.
+
+## 2026-07 · Architecture · MCP has no place in the running application
+
+MCP is a protocol for language models to call tools. Routing the app's data
+through it would add two network hops (browser → backend → MCP client → MCP
+server → provider API) and return text formatted for a model rather than
+JSON for a map. MCP is used during development, inside Claude Code, and
+nowhere at runtime.
+
+## 2026-07 · Imagery · No band downloads, no "imagery agent"
+
+The concern was that importing satellite data is heavy and slow, and might
+need its own background service. It does not: Sentinel Hub's WMS renders
+server-side and returns ordinary 256 px map tiles. No `.SAFE` products, no
+band arithmetic, no separate process. The feature feared most turned out to
+be the cheapest.
+
+## 2026-07 · Scope · Real-time dropped
+
+Dark-vessel analysis is inherently retrospective: GFW's SAR detections lag
+about five days, the Danish AIS archive publishes about three days late, and
+Sentinel-1 revisit is measured in days. Real-time vessel tracking and
+dark-vessel analysis are two different products. Chose the second.
+
+## 2026-07 · Prior art · Paolo et al., *Nature* 2024
+
+Global Fishing Watch has already done this at planetary scale: Sentinel-1
+and Sentinel-2 against AIS across 2 petabytes with convolutional networks,
+finding that 72–76 % of industrial fishing vessels are not publicly tracked.
+The project continues anyway — its purpose is to build and to measure, not
+to be novel — and states the prior art openly rather than waiting to be
+told.
+
+## 2026-07 · Data · GFW publishes conclusions, not positions
+
+GFW's API gives AIS-disabling events, SAR detections flagged matched or
+unmatched, encounters, loitering, and vessel identity. It does **not** give
+individual AIS positions — only aggregated presence rasters. So GFW can be a
+second opinion but cannot be the AIS source.
+
+## 2026-08 · Measurement · Bijagós imagery: viable
+
+First candidate site was the Bijagós Archipelago, Guinea-Bissau — UNESCO
+World Heritage, a documented IUU fishing target, and coastal, so terrestrial
+AIS looked plausible. Copernicus catalogue, trailing year: Sentinel-1 88
+passes, average 4.1 days, longest gap 7 days. Sentinel-2 strongly seasonal,
+usable December–May, monsoon June–September. Imagery was never the problem.
+
+## 2026-08 · Measurement · Bijagós AIS: nothing, and the control that proved why
+
+Thirty minutes of AISStream over the Bijagós returned **0 messages**. Before
+accepting that as a coverage result, ran the same test over the Dover
+Strait — one of the busiest waterways on earth. **Also 0.**
+
+The control failing meant the first result was void: nothing would have
+returned data anywhere. AISStream's issue tracker confirmed it — an
+identical report from March 2026 still unanswered, five expired-certificate
+reports in May, no maintainer activity since.
+
+**The rule this produced, which shaped everything after: always run a
+positive control before accepting a negative result.**
+
+## 2026-08 · Data · AISStream rejected; AISHub not usable
+
+AISStream appears abandoned. AISHub is a reciprocal network: API access
+expects you to contribute a physical receiver. Neither is an option.
+
+## 2026-08 · Finding · There is no free AIS receiver in West Africa
+
+AISHub publishes its 1,588 stations as JSON. Querying every West African
+coastal country — Mauritania, Senegal, Gambia, Guinea-Bissau, Guinea, Sierra
+Leone, Liberia, Côte d'Ivoire, Ghana, Togo, Benin, Nigeria, Cape Verde —
+returns **zero stations**. The same query returns hits immediately for
+Sweden, South Africa, Morocco, Angola and Brazil.
+
+This is a finding, not an obstacle: the monitoring gap at a World Heritage
+site is on the ground as well as in orbit.
+
+## 2026-08 · Data · Free point-level AIS exists in four places on earth
+
+Denmark (historical, daily CSV), Finland (live API), Norway (live API),
+United States (historical). Everything else is commercial. French, Spanish
+and Portuguese waters — which have the worst MPA trawling records in Europe
+— publish only aggregated density rasters, unusable for click-a-vessel
+correlation.
+
+## 2026-08 · Site · Denmark, for the only honest reason
+
+Seas At Risk / Oceana / Marine Conservation Society measured 4.4 million
+hours of bottom trawling inside marine Natura 2000 sites between 2015 and
+2023; trawling continues in 90 % of offshore EU MPAs; and in the Baltic not
+one MPA prohibits fishing entirely. By hours, Denmark ranks third after the
+Netherlands and Germany.
+
+France and Spain rank worse and make the better story. **Neither publishes
+free point-level AIS.** Denmark is the only place where a real story
+overlaps with real data — the structural tension of the whole project: open
+data exists where governance is strong, and dark vessels concentrate where
+it is weak.
+
+**Consequence:** historical data means no live recorder, no always-on
+process, and no three-week wait. The largest schedule risk disappeared.
+
+## 2026-08 · Engineering · The DMA archive is a JavaScript page over an S3 bucket
+
+`aisdata.ais.dk` renders its file listing client-side, so the HTML contains
+no filenames. Rather than reach for a headless browser, read the bucket name
+from the page source and call S3's `ListObjectsV2` API directly: byte-exact
+sizes, real timestamps, full pagination, and immune to the page being
+restyled.
+
+Measured: 531 daily files, an 18-month rolling window, ~3-day publication
+lag, median 614 MB compressed → 2.9 GB uncompressed.
+
+**The rolling window has a design consequence:** old days expire, so every
+filtered extract is archived in `data/out/` rather than re-fetched.
+
+## 2026-09 · Architecture · Precompute everything; the browser stays dumb
+
+Ingestion keeps only AIS inside the padded box within ±90 minutes of each
+acquisition, then interpolates every vessel's position to the **exact second**
+of the pass and stores that as `snapshots`. The browser never interpolates:
+a click is one distance calculation against ~100 precomputed rows. 927,000
+raw positions become 1,413 snapshots. `positions.csv` is kept in the
+repository for phase 2 but never loaded into the database.
+
+## 2026-09 · Architecture · No backend server
+
+A server was planned to hold credentials and proxy queries. It proved
+unnecessary: Supabase is queried from the browser under a read-only policy,
+Sentinel Hub's WMS is designed for browser use and its instance can be
+domain-locked, and GFW data is ingested offline. Nothing was left for a
+server to do. Vercel and Supabase only. A backend returns when phase 2
+needs raw pixels.
+
+## 2026-09 · Site · Hirsholmene, chosen by trawling signature rather than by name
+
+86 Natura 2000 sites intersect the Kattegat box, many of them lakes and
+forests. Rather than choose by name, scored every polygon against a day of
+Danish AIS: distinct vessels, distinct fishing vessels, and fishing vessels
+at **2–5 knots** — trawling speed, the signature of gear in the water rather
+than a vessel passing through.
+
+*Skagens Gren* had the most raw trawling but is 71 × 62 km and contains a
+traffic separation scheme, with cargo as its top vessel category.
+**Hirsholmene (DK00FX113)** had the highest fishing density — 15 fishing
+vessels in 95 km², five at trawling speed — and a vessel mix of fishing,
+pleasure and sailing with **no cargo or tanker at all**. No shipping lane
+crosses it, so every large radar return is almost certainly a fishing
+vessel. Verified across three seasons before committing.
+
+## 2026-09 · Method · GFW event counts are a poor proxy for presence
+
+Ranking radar passes by GFW fishing events scored 303 of 317 passes at zero.
+The same day that GFW scores zero had 12 fishing vessels inside the site in
+the Danish record. GFW only records sustained, classified fishing from a
+sparser satellite feed; it misses transits and short activity. **Presence is
+scored from the Danish data.** The ranking script is kept as a record of the
+rejected approach.
+
+## 2026-09 · Method · Scenes are chosen by measured activity, not by date
+
+The first twelve scenes were spread evenly across April–July for no better
+reason than even spacing, and at those instants the site was nearly empty —
+the vessels in the box were moored in Strandby harbour, 300 m outside the
+boundary. Re-ingested every pass over a four-week window and scored each by
+fishing vessels inside the polygon at the acquisition instant, keeping only
+scenes with three or more. `scenes` gained `n_in_site`,
+`n_fishing_in_site` and `n_trawling_in_site` so the picker sorts on measured
+truth rather than a client-side proxy.
+
+## 2026-09 · Finding · The fleet works at night and dawn
+
+Hour-by-hour analysis of one day inside the site: 5 fishing vessels at
+05:00 UTC with 4 trawling, nothing through the middle of the day, 12 inside
+at 17:00 transiting out. Sentinel-1's sun-synchronous orbit fixes its passes
+at roughly 05:35 and 17:05 UTC — so the morning pass catches the fleet at
+work and the evening pass catches it leaving. Not a blind spot, but a narrow
+coincidence worth knowing.
+
+## 2026-09 · Finding · GFW knows the site is protected and records fishing there anyway
+
+Hypothesis after seeing one event tagged with no marine protected area:
+GFW's protected-area layer might omit this Natura 2000 site, which would
+have been a striking finding in itself. Tested across all events inside the
+polygon: **293 of 293 are tagged as inside an MPA. Hypothesis rejected.**
+
+The truth is stronger than the hypothesis was. Over 18 months: 293 apparent
+fishing events by 45 distinct vessels inside the boundary, every one
+recognised by GFW as occurring in a protected area, **94 % Danish-flagged**.
+This is the domestic fleet fishing a domestic protected site, legally. That
+is what a *paper park* means.
+
+## 2026-09 · Feature · The gap-event join was designed, then cut for lack of data
+
+The planned centrepiece was: for a radar return with no AIS, find which
+vessel had recently switched its transponder off nearby and could plausibly
+have reached that position at a realistic speed. GFW reports **zero**
+AIS-disabling events here in a year. Cut. The unmatched verdict says plainly
+that no AIS contact exists, with no speculation — and the per-vessel GFW
+context (what the boat was doing before and after the pass) replaced it.
+
+## 2026-09 · Feature · The confidence ratio was built, then replaced
+
+Section 10 originally displayed "AIS coverage" — the fraction of
+GFW-confirmed fishing vessels also present in the Danish record. It was
+designed in August for a volunteer AIS network with real reception holes.
+With the Danish Maritime Authority's official shore network the figure is
+near 100 % by construction, only one scene of fourteen met the
+three-reference-vessel threshold, and the wording implied a deficiency in
+the golden source. Replaced with **two independent counts side by side**,
+always displayable, where zero is a result rather than an error.
+
+## 2026-09 · Measurement · Satellite coverage, footprint-verified
+
+A pass counts only if the product's footprint contains the site — four
+corners and centre — not merely intersects a box around it. Sentinel-2 is
+tested on the centre alone, because its 100 km tiles sit on a fixed grid and
+a small box can straddle a tile edge.
+
+Trailing 365 days, same test and comparable target size at both sites:
+
+| | Sentinel-1 passes | Average interval |
+|---|---|---|
+| Hirsholmene | **209** | 1.7 days |
+| Bijagós core | **31** | 11.8 days |
+
+The Bijagós median gap and longest gap are both exactly **12.0 days** — the
+Sentinel-1 repeat cycle. One satellite, one track, once per cycle.
+Hirsholmene's median gap is 13 hours: several tracks, morning and evening.
+That is the difference between systematic acquisition over Europe and
+opportunistic acquisition elsewhere, in two numbers.
+
+Earlier figures of 419, 317 and 88 passes were measured by intersection with
+larger boxes and are superseded.
+
+## 2026-09 · Honesty · Sources in this project are not all independent
+
+GFW's SAR detections are themselves derived from Sentinel-1. Displaying them
+over a Sentinel Hub image would be the same source twice, processed
+differently — not two sources crossed. The genuinely independent pairing is
+**Sentinel-1 pixels against AIS positions**, and that correlation is
+computed here rather than consumed.
+
+---
+
+# Build · September 2026
+
 
 ## 2026-09-15 · M1 · Basemap: OpenFreeMap dark instead of Carto Dark Matter
 
