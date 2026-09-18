@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Where the README lives, for the foot line on both pages.
-const README_URL = 'https://github.com/wyren75/herring#readme'
+const README_URL = 'https://github.com/wyren75/danish-herring#readme'
 
 const CONTACT = 'mfresque@gmail.com'
 
