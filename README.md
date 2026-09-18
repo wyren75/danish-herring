@@ -1,8 +1,7 @@
-<p align="center">
-  <img src="public/herring-painted.png" width="96" alt="Danish Herring">
-</p>
-
-# Danish Herring
+<h1>
+  <img src="public/herring-painted.png" width="44" alt="">
+  Danish Herring
+</h1>
 
 **A game about finding fishing boats in a protected sea — built by crossing satellite radar, official AIS and Global Fishing Watch over one Natura 2000 site in Denmark.**
 
