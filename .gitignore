@@ -26,3 +26,7 @@ dist-ssr
 # Secrets
 .env
 .vercel
+
+# Working documents, not published
+PROJECT_CONTEXT.md
+JOURNAL.md
