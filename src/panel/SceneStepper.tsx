@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Scene } from '../lib/data'
 import { utcDate, utcTime } from '../lib/format'
-import ScenePicker, { dots, rankScenes } from './ScenePicker'
+import ScenePicker, { rankScenes } from './ScenePicker'
+import SceneDots from './SceneDots'
 
 interface Props {
   scenes: Scene[]
@@ -86,9 +87,7 @@ export default function SceneStepper({ scenes, selectedId, onSelect }: Props) {
           <>
             {utcDate(scene.acq_mid)} · {utcTime(scene.acq_mid)} · {scene.n_fishing_in_site}{' '}
             fishing · {scene.n_trawling_in_site} trawling{' '}
-            <span className="scene-dots" aria-hidden="true">
-              {dots(scene)}
-            </span>
+            <SceneDots scene={scene} />
           </>
         ) : (
           <span className="muted">Loading scenes…</span>

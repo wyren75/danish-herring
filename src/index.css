@@ -287,9 +287,12 @@ body {
   font-size: 12px;
 }
 
+/* The dots say what they count in a native tooltip (SceneDots); the help
+   cursor is the only hint on screen that there is something to hover. */
 .scene-dots {
   color: var(--accent);
   letter-spacing: 0.1em;
+  cursor: help;
 }
 
 /* Inspector (13.5): the result, 340 px on the right, slid in from off-screen

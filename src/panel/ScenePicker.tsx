@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import type { Scene } from '../lib/data'
 import { utcDate, utcTime } from '../lib/format'
+import SceneDots from './SceneDots'
 
 interface Props {
   scenes: Scene[]
@@ -19,14 +20,6 @@ export function rankScenes(scenes: Scene[]): Scene[] {
       a.acq_mid.localeCompare(b.acq_mid),
   )
 }
-
-// Activity glyph, up to four dots. Trawlers are counted twice — they are
-// fishing vessels that are also working — which reproduces the spec's
-// examples (6·4 → ●●●●, 5·4 → ●●●●, 7·0 → ●●●).
-export const dots = (scene: Scene) =>
-  '●'.repeat(
-    Math.min(4, Math.round((scene.n_fishing_in_site + scene.n_trawling_in_site) / 2.5)),
-  )
 
 // The list of scenes in section-8 order, one row each. In v1 (13.3) it is
 // the scene stepper's dropdown rather than a permanent panel.
@@ -53,9 +46,7 @@ export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
                 </span>
                 <span className="scene-counts">
                   {scene.n_fishing_in_site} fishing inside · {scene.n_trawling_in_site} trawling
-                  <span className="scene-dots" aria-hidden="true">
-                    {dots(scene)}
-                  </span>
+                  <SceneDots scene={scene} />
                 </span>
               </button>
             </li>

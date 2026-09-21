@@ -610,3 +610,30 @@ that the toggle lacked, so the toggle now runs it: each time AIS is
 switched on, `revealKey` is bumped and the markers fade in one after
 another. Blind-click-first is unaffected — the layer is still off by
 default.
+
+## 2026-09-21 · The activity dots: the formula, and a tooltip saying what they count
+
+The glyph beside each scene is
+
+```
+min(4, round((n_fishing_in_site + n_trawling_in_site) / 2.5))
+```
+
+filled dots. Trawlers are counted twice — a trawler is a fishing vessel
+that is also working — so a scene of moving gear outranks a scene of
+moored boats with the same headcount.
+
+**The divisor was fitted, not derived.** Section 8 prints three examples:
+6·4 → ●●●●, 5·4 → ●●●●, 7·0 → ●●●. With the cap at four, 2.5 is the
+value that reproduces all three; no principle recommends it and nothing
+measures it. If the dataset changes, those examples are what to re-check
+— not the number.
+
+**The dots now say what they count.** Nothing on screen explained them.
+They carry a native `title` — *"Activity: fishing vessels inside the site,
+trawlers counted twice"* — rather than a fourth (i) button: the app has
+enough of those, and the glyph is decoration beside the two counts it
+summarises. It stays `aria-hidden`, since a screen reader already reads
+those counts aloud; the help cursor is the only hint that there is
+something to hover. The glyph moved to `SceneDots`, used by both the
+stepper and its dropdown, so the formula has one home.
