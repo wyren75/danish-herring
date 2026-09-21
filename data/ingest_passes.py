@@ -26,10 +26,19 @@ import requests
 CDSE = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 OUT = "out"
 
+# Each site has a QUERY box (what to ask the catalogue for) and a TEST box
+# (what a product must fully contain to count as a pass). The test box must be
+# small enough to fit inside one product; for Hirsholmene it is the site's own
+# bbox (12 x 24 km); for the Bijagos it is a core of the archipelago around
+# Bubaque of comparable size, so the two sites are compared like for like.
 SITES = {
-    # code:        (label,                         west,   south,  east,   north)
-    "DK00FX113": ("Hirsholmene, Kattegat",         10.321, 57.230, 10.767, 57.686),
-    "BIJAGOS":   ("Bijagós Archipelago, Guinea-Bissau", -17.0, 10.5, -15.3, 11.8),
+    # code:        (label, query_bbox (W,S,E,N), test_bbox (W,S,E,N))
+    "DK00FX113": ("Hirsholmene, Kattegat",
+                  (10.441, 57.350, 10.647, 57.566),
+                  (10.441, 57.350, 10.647, 57.566)),
+    "BIJAGOS":   ("Bijagós Archipelago, Guinea-Bissau",
+                  (-17.0, 10.5, -15.3, 11.8),
+                  (-16.0, 11.05, -15.8, 11.25)),
 }
 
 MISSIONS = {
@@ -64,6 +73,40 @@ def query(collection, product_type, bbox, start, end):
     return items
 
 
+def _point_in_ring(x, y, ring):
+    inside = False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+
+def covers(product, bbox, mode="full"):
+    """A pass counts only if its footprint contains the site.
+
+    mode="full"   - all four corners plus the centre (Sentinel-1: one product
+                    is ~170 x 250 km, so a 20 km box must fit entirely)
+    mode="centre" - the centre point only (Sentinel-2: tiles are 100 km
+                    squares on a fixed grid and a small box can straddle a
+                    tile edge, which would fail every product)
+    """
+    w, s, e, n = bbox
+    c = ((w + e) / 2, (s + n) / 2)
+    pts = [c] if mode == "centre" else [(w, s), (e, s), (e, n), (w, n), c]
+    fp = product.get("GeoFootprint") or {}
+    if fp.get("type") == "Polygon":
+        rings = [fp["coordinates"][0]]
+    elif fp.get("type") == "MultiPolygon":
+        rings = [poly[0] for poly in fp["coordinates"]]
+    else:
+        return True
+    return all(any(_point_in_ring(x, y, r) for r in rings) for x, y in pts)
+
+
 def cloud_of(product):
     for a in product.get("Attributes", []) or []:
         if a.get("Name") == "cloudCover":
@@ -85,10 +128,16 @@ def main():
     e = end.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
     rows = []
-    for code, (label, *bbox) in SITES.items():
+    for code, (label, query_bbox, test_bbox) in SITES.items():
         for mission, (collection, ptype) in MISSIONS.items():
             print(f"{code} {mission}")
-            products = query(collection, ptype, bbox, s, e)
+            products = query(collection, ptype, query_bbox, s, e)
+            before = len(products)
+            mode = "centre" if mission == "S2" else "full"
+            products = [p for p in products if covers(p, test_bbox, mode)]
+            if before != len(products):
+                print(f"    dropped {before - len(products)} products that only "
+                      f"touch the area without covering it")
 
             # collapse products from the same pass (same hour) into one row
             slots = defaultdict(list)

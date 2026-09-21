@@ -64,12 +64,76 @@ def log(msg=""):
 
 
 # ---------------------------------------------------------------------------
+# Site polygon, so every scene can be scored by what is INSIDE the site
+# ---------------------------------------------------------------------------
+
+def _point_in_ring(x, y, ring):
+    inside = False
+    j = len(ring) - 1
+    for i in range(len(ring)):
+        xi, yi = ring[i][0], ring[i][1]
+        xj, yj = ring[j][0], ring[j][1]
+        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
+            inside = not inside
+        j = i
+    return inside
+
+
+def load_site_rings():
+    import json
+    for p in ("natura_sites.geojson", os.path.join("data", "natura_sites.geojson")):
+        if os.path.exists(p):
+            with open(p, encoding="utf-8") as fh:
+                for ft in json.load(fh)["features"]:
+                    if ft["properties"].get("SITECODE") == SITE_CODE:
+                        g = ft["geometry"]
+                        return ([g["coordinates"][0]] if g["type"] == "Polygon"
+                                else [poly[0] for poly in g["coordinates"]])
+    log("! natura_sites.geojson not found - in-site counts will be 0")
+    return []
+
+
+SITE_RINGS = load_site_rings()
+
+
+def in_site(lon, lat):
+    return any(_point_in_ring(lon, lat, r) for r in SITE_RINGS)
+
+
+# ---------------------------------------------------------------------------
 # 1. Scenes
 # ---------------------------------------------------------------------------
 
+# Points every product footprint must contain to count as "covering the site":
+# the four corners of the site's own tight bbox plus its centre.
+_SW, _SS, _SE, _SN = SITE_BBOX
+SITE_TEST_POINTS = [(_SW, _SS), (_SE, _SS), (_SE, _SN), (_SW, _SN),
+                    ((_SW + _SE) / 2, (_SS + _SN) / 2)]
+
+
+def footprint_covers_site(product):
+    """True if the product's GeoFootprint contains all five test points.
+
+    Intersecting the padded box is not enough: some orbit tracks clip only
+    the box's western edge over the mainland and never image the site.
+    """
+    fp = product.get("GeoFootprint") or {}
+    t = fp.get("type")
+    if t == "Polygon":
+        rings = [fp["coordinates"][0]]
+    elif t == "MultiPolygon":
+        rings = [poly[0] for poly in fp["coordinates"]]
+    else:
+        return True   # no footprint given; don't drop it on missing data
+    return all(any(_point_in_ring(x, y, r) for r in rings)
+               for x, y in SITE_TEST_POINTS)
+
+
 def query_scenes(start, end):
-    poly = (f"POLYGON(({WEST} {SOUTH},{EAST} {SOUTH},{EAST} {NORTH},"
-            f"{WEST} {NORTH},{WEST} {SOUTH}))")
+    # Intersect the site's tight bbox (not the padded box) to cut false hits,
+    # then verify coverage against the footprint.
+    poly = (f"POLYGON(({_SW} {_SS},{_SE} {_SS},{_SE} {_SN},"
+            f"{_SW} {_SN},{_SW} {_SS}))")
     filt = " and ".join([
         "Collection/Name eq 'SENTINEL-1'",
         f"OData.CSC.Intersects(area=geography'SRID=4326;{poly}')",
@@ -83,8 +147,11 @@ def query_scenes(start, end):
     r = requests.get(url, timeout=120)
     r.raise_for_status()
 
-    scenes = []
+    scenes, dropped = [], 0
     for p in r.json().get("value", []):
+        if not footprint_covers_site(p):
+            dropped += 1
+            continue
         t0 = datetime.fromisoformat(
             p["ContentDate"]["Start"].replace("Z", "+00:00"))
         t1 = datetime.fromisoformat(
@@ -96,7 +163,22 @@ def query_scenes(start, end):
             "acq_end": t1,
             "acq_mid": t0 + (t1 - t0) / 2,
         })
-    return scenes
+    if dropped:
+        log(f"  dropped {dropped} products whose footprint touches the area "
+            f"but does not cover the site")
+
+    # Adjacent products from the same pass start seconds apart and both
+    # cover the site. Keep one per pass: drop anything within 120 s of the
+    # previously kept scene.
+    scenes.sort(key=lambda s: s["acq_start"])
+    unique, last = [], None
+    for s in scenes:
+        if last is None or (s["acq_start"] - last).total_seconds() > 120:
+            unique.append(s)
+            last = s["acq_start"]
+    if len(unique) != len(scenes):
+        log(f"  collapsed {len(scenes) - len(unique)} same-pass duplicates")
+    return unique
 
 
 def pick_evenly(scenes, n):
@@ -332,8 +414,11 @@ create table scenes (
   bbox_s        double precision,
   bbox_e        double precision,
   bbox_n        double precision,
-  n_positions   integer,
-  n_vessels     integer
+  n_positions          integer,
+  n_vessels            integer,
+  n_in_site            integer,
+  n_fishing_in_site    integer,
+  n_trawling_in_site   integer
 );
 
 create table vessels (
@@ -392,13 +477,16 @@ def write_outputs(scenes, vessels, positions, snaps):
         w = csv.writer(fh)
         w.writerow(["scene_id", "product_name", "acq_start", "acq_end", "acq_mid",
                     "site_code", "bbox_w", "bbox_s", "bbox_e", "bbox_n",
-                    "n_positions", "n_vessels"])
+                    "n_positions", "n_vessels",
+                    "n_in_site", "n_fishing_in_site", "n_trawling_in_site"])
         for sc in scenes:
             w.writerow([sc["scene_id"], sc["product_name"],
                         sc["acq_start"].isoformat(), sc["acq_end"].isoformat(),
                         sc["acq_mid"].isoformat(), SITE_CODE,
                         WEST, SOUTH, EAST, NORTH,
-                        sc.get("n_positions", 0), sc.get("n_vessels", 0)])
+                        sc.get("n_positions", 0), sc.get("n_vessels", 0),
+                        sc.get("n_in_site", 0), sc.get("n_fishing_in_site", 0),
+                        sc.get("n_trawling_in_site", 0)])
 
     with open(os.path.join(OUT, "vessels.csv"), "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
@@ -440,7 +528,12 @@ def main():
     ap.add_argument("--start", default="2026-04-01")
     ap.add_argument("--end", default="2026-07-31")
     ap.add_argument("--max-scenes", type=int, default=12)
+    ap.add_argument("--scene-list", metavar="FILE",
+                    help="use exactly these product names (from pick_scenes.py) "
+                         "instead of spreading by date")
     ap.add_argument("--keep", action="store_true", help="keep day CSVs in cache")
+    ap.add_argument("--min-fishing", type=int, default=0,
+                    help="drop scenes with fewer fishing vessels inside the site")
     args = ap.parse_args()
 
     log("=" * 72)
@@ -449,11 +542,29 @@ def main():
     log(f"window +/- {WINDOW_MIN} min around each acquisition")
     log("=" * 72)
 
-    log(f"\nquerying Sentinel-1 scenes {args.start} -> {args.end} ...")
-    all_scenes = query_scenes(args.start, args.end)
-    log(f"  {len(all_scenes)} scenes cover the site in that range")
-    scenes = pick_evenly(all_scenes, args.max_scenes)
-    log(f"  using {len(scenes)}, spread evenly:")
+    if args.scene_list:
+        with open(args.scene_list, encoding="utf-8") as fh:
+            wanted = {line.strip() for line in fh if line.strip()}
+        # widen the catalogue query so any listed scene can be found
+        start, end = "2025-03-01", datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        log(f"\nquerying Sentinel-1 scenes {start} -> {end} to match "
+            f"{len(wanted)} listed products ...")
+        all_scenes = query_scenes(start, end)
+        scenes = [s for s in all_scenes
+                  if s["product_name"] in wanted or s["scene_id"] in wanted]
+        missing = wanted - {s["product_name"] for s in scenes} \
+                         - {s["scene_id"] for s in scenes}
+        if missing:
+            log(f"  ! {len(missing)} listed products not found in the catalogue:")
+            for m in sorted(missing):
+                log(f"    {m}")
+        log(f"  using {len(scenes)} scenes chosen by activity:")
+    else:
+        log(f"\nquerying Sentinel-1 scenes {args.start} -> {args.end} ...")
+        all_scenes = query_scenes(args.start, args.end)
+        log(f"  {len(all_scenes)} scenes cover the site in that range")
+        scenes = pick_evenly(all_scenes, args.max_scenes)
+        log(f"  using {len(scenes)}, spread evenly:")
     for sc in scenes:
         log(f"    {sc['acq_mid']:%Y-%m-%d %H:%M} UTC  {sc['scene_id'][:40]}...")
 
@@ -482,6 +593,8 @@ def main():
         cleanup_day(path, args.keep)
 
     log("\ninterpolating to acquisition instants ...")
+    log(f"  {'scene':<17} {'positions':>9} {'in box':>7} {'in site':>8} "
+        f"{'fishing':>8} {'trawling':>9}")
     snaps = {}
     for sc in scenes:
         rows = positions.get(sc["scene_id"], [])
@@ -489,8 +602,29 @@ def main():
         snaps[sc["scene_id"]] = snap
         sc["n_positions"] = len(rows)
         sc["n_vessels"] = len(snap)
-        log(f"  {sc['acq_mid']:%Y-%m-%d %H:%M}  {len(rows):>7,} positions  "
-            f"{len(snap):>4} vessels at the instant")
+
+        # score the scene by what is INSIDE the site polygon at the instant
+        site_v = [s for s in snap if in_site(s["lon"], s["lat"])]
+        fish_v = [s for s in site_v
+                  if vessels.get(s["mmsi"], {}).get("ship_type") == "Fishing"]
+        trawl_v = [s for s in fish_v
+                   if s["sog"] is not None and 2.0 <= s["sog"] <= 5.0]
+        sc["n_in_site"] = len(site_v)
+        sc["n_fishing_in_site"] = len(fish_v)
+        sc["n_trawling_in_site"] = len(trawl_v)
+
+        flag = "  <-- good" if len(fish_v) >= 3 else ""
+        log(f"  {sc['acq_mid']:%Y-%m-%d %H:%M}  {len(rows):>9,} {len(snap):>7} "
+            f"{len(site_v):>8} {len(fish_v):>8} {len(trawl_v):>9}{flag}")
+
+    if args.min_fishing > 0:
+        before = len(scenes)
+        scenes = [sc for sc in scenes if sc["n_fishing_in_site"] >= args.min_fishing]
+        keep_ids = {sc["scene_id"] for sc in scenes}
+        positions = {k: v for k, v in positions.items() if k in keep_ids}
+        snaps = {k: v for k, v in snaps.items() if k in keep_ids}
+        log(f"\nkept {len(scenes)} of {before} scenes with >= {args.min_fishing} "
+            f"fishing vessels inside the site")
 
     write_outputs(scenes, vessels, positions, snaps)
 
