@@ -31,6 +31,7 @@ import Progress from './panel/Progress'
 import SceneCounts from './panel/SceneCounts'
 import { rankScenes } from './panel/ScenePicker'
 import TopBar from './panel/TopBar'
+import { Analytics } from '@vercel/analytics/react'
 import Welcome, { AboutButton, welcomeDismissed } from './panel/Welcome'
 
 export const APP_NAME = 'Danish Herring'
@@ -306,10 +307,14 @@ export default function App() {
           />
         )}
       </div>
+      {/* Vercel Web Analytics: page views and referrer, cookieless, no
+          personal data, no custom events. Nothing to consent to. */}
+      <Analytics />
       <footer className="footer">
         Data: Copernicus Sentinel-1/2 · Danish Maritime Authority · Global Fishing Watch ·
         EEA Natura 2000 · {BASEMAP.attribution}
       </footer>
+      <Analytics />
     </div>
   )
 }
