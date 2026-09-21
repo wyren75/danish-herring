@@ -686,3 +686,53 @@ scene: `ingest.py` already captures the field into `positions`, so only
 whole table would have to be rebuilt to fill it. If a later change
 re-ingests for another reason, carry it then and show it as what it is —
 a declaration, with its time of setting — not as an observation.
+
+## 2026-09-21 · A progress counter — the scene becomes a quest
+
+The app asks the user to click bright dots on a radar image, and until now
+nothing told them when they were done. A scene has a finite number of
+answers in it; the counter says how many, and how many are left.
+
+**What it counts.** The denominator is the scene's `n_fishing_in_site`,
+precomputed at ingestion (section 8) and read, never recomputed. The
+numerator is the distinct MMSIs the user has matched in this scene under
+the *same two conditions* — `ship_type = 'Fishing'`, and an AIS position
+inside the site polygon. Numerator and denominator must apply the same
+test or the counter can never reach its own total, and a "3 / 6" that
+cannot become "6 / 6" is worse than no counter at all. This is why the
+test is the snapshot's position, not the click's: `verdict.inSite` answers
+"did the user click inside the protected area", which is a different
+question and a looser one.
+
+**Why only in-site fishing vessels.** The point of the app is the fleet
+inside a protected site (section 1). A cargo ship transiting the box is a
+real radar return and a real match, and the inspector will say so — it is
+simply not what is being counted. Counting every vessel in the box would
+make the number about the user's mouse rather than about the site, and the
+site is the subject.
+
+**Revealing AIS makes it easier, on purpose.** The obvious objection is
+that ticking *AIS fishing vessels* hands the user the answers: the markers
+appear, and clicking each one fills the counter in under a minute. That is
+allowed, and it is the right call. Blocking it would mean either freezing
+the counter while the layer is on — which turns a discovery into a
+punishment — or tracking whether each find was "earned", which is
+bookkeeping about honesty that nobody asked for. The reveal is already the
+lesson of section 7.3: the radar shows you *something is there*, AIS tells
+you *what it is*, and the gap between the two is the whole argument. A
+user who reveals the layer and collects six vessels has seen exactly that
+gap, six times. A user who finds three blind and reveals the rest has seen
+it too, and more sharply.
+
+**Reached by action, not watched for.** The find is recorded in the two
+handlers that can produce a match — the map click, and a drag of the
+matching radius that pulls a vessel inside the circle — rather than in an
+effect watching the verdict. Same result, and it keeps `setState` out of
+effects, which the linter rightly objects to.
+
+The counter is hidden where `n_fishing_in_site` is zero (no scene in the
+table is, but the guard is a line), and its set is emptied on every scene
+change: each scene is its own hunt. At *n*/*n* the text turns accent orange
+and says *all found* — the one moment the app has an ending. The border
+stays as it was: an orange ring round the whole pill was tried and read as
+an alert rather than a finish.

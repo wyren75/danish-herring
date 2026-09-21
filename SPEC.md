@@ -72,6 +72,7 @@ That is the whole product. Everything below is how.
 | 8 | Optional Sentinel-2 true-colour layer where a clear scene exists |
 | 9 | Observation tab: pass timeline, gap statistics, trip-unseen probability |
 | 10 | README + DECISIONS.md, deployed on Vercel |
+| 11 | Progress counter: the in-site fishing vessels of the scene, and how many the user has found |
 
 ### Out of scope (explicitly)
 
@@ -816,6 +817,7 @@ this is placement.
 │                                              ┌───────┐ │ VERDICT     ✕ │
 │                                              │Layers▾│ │               │
 │                                              └───────┘ │ KAREN MARIE   │
+│                   ( trawler  2 / 6 )                   │               │
 │                     MAP — full width                   │ Fishing · DNK │
 │                                                        │ 05:31:38 UTC  │
 │      ┌──────────────────────────────────────┐          │ 3.1 kn · 214° │
@@ -869,6 +871,10 @@ state for the session.
 pill — *"Pick a scene above, then click a bright dot inside the orange
 line."* Disappears on the first map click and does not return.
 **Removed 17 Sept (13.12)** — the welcome dialog says this already.
+
+**Progress counter**: a rounded pill centred at the top of the map, just
+below the top bar, clear of the control icons on the left. It is the scene's
+score — 13.14.
 
 ### 13.5 Inspector — result, on the right, only when there is one
 
@@ -1145,6 +1151,34 @@ toggle set the same state, and the button sat directly under the toggle,
 disabled whenever it was on. The sweep animation survives on the toggle:
 the markers fade in one after another each time the AIS layer is switched
 on, which is where the reveal belonged.
+
+### 13.14 The progress counter — the scene as a quest (21 Sept)
+
+A floating pill, centred at the top of the map directly under the top bar.
+It holds the trawler mark `public/trawler-flat.png` at 40 px — with
+`srcSet="/trawler-flat.png 1x, /trawler-flat@2x.png 2x"`, so it stays sharp
+on a high-density screen — and a count, `2 / 6`.
+
+**The denominator** is the selected scene's `n_fishing_in_site` (section 8),
+read, never recomputed. **The numerator** is the number of distinct MMSIs
+the user has matched in this scene that meet the same two conditions:
+`ship_type = 'Fishing'` and an AIS position inside the *site* polygon, not
+the box (3.1). A match reached by clicking a revealed AIS marker counts
+exactly as a blind click on the radar does; the state of the AIS layer
+changes nothing. Dragging the matching radius until a vessel falls inside
+the circle is a match too — whatever the inspector calls matched, counts.
+
+State is a set of MMSIs held for the scene on screen and **emptied whenever
+the scene changes**: each scene is its own hunt. The counter is **hidden
+entirely** where `n_fishing_in_site` is zero.
+
+Styling: **55% opacity until the first find**, full opacity after, so it
+reads as a target before it reads as a score; a brief scale pulse on each
+increment; and at *n*/*n* the text — the count and its mark — turns accent
+orange and reads `6 / 6 · all found`. The pill's border does not change: a
+ring around the whole counter reads as an alert, not as a finish. Native `title` tooltip: *"Fishing vessels inside the protected site
+that you have identified."* The pill is `aria-live="polite"`, so the count
+is announced as it rises.
 
 ---
 

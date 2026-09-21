@@ -7,16 +7,17 @@ import {
   loadSite,
   loadSnapshots,
   loadVessels,
+  isFishing,
   type GfwEvent,
   type SatellitePass,
   type Scene,
   type Snapshot,
   type Vessel,
 } from './lib/data'
-import { bounds, type LonLat, type SiteGeometry } from './lib/geo'
+import { bounds, pointInPolygon, type LonLat, type SiteGeometry } from './lib/geo'
 import { eventsAroundPass, eventsOnSceneDay } from './lib/gfw'
 import { clearS2Pass, type S2Pick } from './lib/s2'
-import { computeVerdict, DEFAULT_RADIUS_M } from './lib/verdict'
+import { computeVerdict, DEFAULT_RADIUS_M, type Verdict } from './lib/verdict'
 import { aisFeatures, EMPTY_AIS } from './map/ais'
 import { EMPTY_GFW, gfwFeatures } from './map/gfw'
 import MapView from './map/Map'
@@ -26,6 +27,7 @@ import Inspector from './panel/Inspector'
 import { layersControl } from './panel/LayersControl'
 import { legendControl } from './panel/LegendControl'
 import MapControls from './panel/MapControls'
+import Progress from './panel/Progress'
 import SceneCounts from './panel/SceneCounts'
 import { rankScenes } from './panel/ScenePicker'
 import TopBar from './panel/TopBar'
@@ -68,6 +70,8 @@ export default function App() {
   // Click state (section 9): where the user clicked, and the matching radius.
   const [click, setClick] = useState<LonLat | null>(null)
   const [radiusM, setRadiusM] = useState(DEFAULT_RADIUS_M)
+  // The quest (13.14): the distinct MMSIs found in the scene on screen.
+  const [found, setFound] = useState<ReadonlySet<string>>(() => new Set())
   // The welcome (13.10) shows once per browser; the book icon reopens it.
   const [welcome, setWelcome] = useState(() => !welcomeDismissed())
 
@@ -121,15 +125,16 @@ export default function App() {
   const showRadar = imagery === 'radar' || (imagery === 'optical' && !s2.pass)
 
   // Selecting a scene clears any click state (section 8), which also closes
-  // the inspector (13.5).
+  // the inspector (13.5), and starts the quest again (13.14): each scene is
+  // its own hunt.
   const selectScene = useCallback((id: string) => {
     setSelectedId(id)
     setClick(null)
+    setFound(new Set())
   }, [])
   const clearClick = useCallback(() => setClick(null), [])
   const openWelcome = useCallback(() => setWelcome(true), [])
   const closeWelcome = useCallback(() => setWelcome(false), [])
-  const mapClick = useCallback((lonLat: LonLat) => setClick(lonLat), [])
 
   // What the map fits to (13.4): the site polygon's bounds.
   const siteBounds = useMemo(() => (data ? bounds(data.site) : null), [data])
@@ -137,6 +142,39 @@ export default function App() {
   const verdict = useMemo(
     () => (data && click ? computeVerdict(click, sceneSnapshots, radiusM, data.site) : null),
     [data, click, sceneSnapshots, radiusM],
+  )
+
+  // A find (13.14) is any match on a Fishing vessel whose AIS position is
+  // inside the site polygon — the two conditions of `n_fishing_in_site`, so
+  // numerator and denominator count the same fleet. How the match was
+  // reached does not matter: a blind click on the radar and a click on a
+  // revealed AIS marker arrive here by the same path.
+  const record = useCallback(
+    (v: Verdict) => {
+      const snapshot = v.matched ? v.nearest?.snapshot : undefined
+      if (!data || !snapshot) return
+      if (!isFishing(data.vessels.get(snapshot.mmsi))) return
+      if (!pointInPolygon(snapshot.lon, snapshot.lat, data.site)) return
+      setFound((prev) => (prev.has(snapshot.mmsi) ? prev : new Set(prev).add(snapshot.mmsi)))
+    },
+    [data],
+  )
+
+  // Both actions that can produce a match record it where it happens: the
+  // click, and a drag of the radius that pulls a vessel inside the circle.
+  const mapClick = useCallback(
+    (lonLat: LonLat) => {
+      setClick(lonLat)
+      if (data) record(computeVerdict(lonLat, sceneSnapshots, radiusM, data.site))
+    },
+    [data, sceneSnapshots, radiusM, record],
+  )
+  const changeRadius = useCallback(
+    (m: number) => {
+      setRadiusM(m)
+      if (data && click) record(computeVerdict(click, sceneSnapshots, m, data.site))
+    },
+    [data, click, sceneSnapshots, record],
   )
 
   // The matched vessel's GFW events around the pass (10.2): the verdict
@@ -244,6 +282,7 @@ export default function App() {
               legendControl,
             ]}
           />
+          <Progress found={found.size} total={scene?.n_fishing_in_site ?? 0} />
           <AboutButton onClick={openWelcome} />
           <Welcome open={welcome} onClose={closeWelcome} />
         </main>
@@ -252,7 +291,7 @@ export default function App() {
             open={click !== null}
             onClose={clearClick}
             radiusM={radiusM}
-            onRadius={setRadiusM}
+            onRadius={changeRadius}
             scene={scene}
             events={data.events}
             matchedEvents={matchedEvents}
