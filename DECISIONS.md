@@ -736,3 +736,27 @@ change: each scene is its own hunt. At *n*/*n* the text turns accent orange
 and says *all found* — the one moment the app has an ending. The border
 stays as it was: an orange ring round the whole pill was tried and read as
 an alert rather than a finish.
+
+## 2026-09-21 · The welcome: no email address, and a way out at the top
+
+Two changes to the welcome dialog (13.10), both about the same thing —
+what a first-time visitor is being asked for.
+
+**The contact address is gone from the footer.** A public demo that opens
+by printing the author's personal email address invites the one thing the
+app cannot do anything with: replies. The README still carries it, which
+is where someone who has read the project and wants to write about it will
+look. The foot line keeps *Open data · built with AI assistance · about
+this project*.
+
+**A ✕ top right.** `Esc` closed the dialog and *Start* closed it from page
+2, but page 1 offered only *How to find a boat →* — a visitor who wanted
+the map, not the tour, had to either guess at `Esc` or read a page of
+prose and click through. The ✕ is the affordance people look for first.
+
+It sits in a sticky, zero-height row rather than absolutely positioned:
+the dialog is its own scroll container (`max-height: 100%`,
+`overflow-y: auto`), so an absolutely positioned ✕ would scroll out of
+sight on a short window — exactly the case where a visitor most wants out.
+Sticky keeps it pinned and zero height keeps it from moving the heading
+below it.

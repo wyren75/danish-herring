@@ -3,8 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 // Where the README lives, for the foot line on both pages.
 const README_URL = 'https://github.com/wyren75/danish-herring#readme'
 
-const CONTACT = 'mfresque@gmail.com'
-
 const STORAGE_KEY = 'welcome-dismissed'
 
 // Shown once per browser (13.10). localStorage may be blocked or full;
@@ -61,7 +59,8 @@ interface Props {
 }
 
 // The welcome (13.10): a two-page modal centred over a dimmed map. Page 1
-// says what this is; page 2 how to find a boat. Esc closes on either page.
+// says what this is; page 2 how to find a boat. Esc and the ✕ close on
+// either page; Start closes from page 2.
 // Closing, however it happens, is remembered so the dialog shows once per
 // browser; the book icon reopens it at page 1.
 export default function Welcome({ open, onClose }: Props) {
@@ -102,6 +101,17 @@ export default function Welcome({ open, onClose }: Props) {
         aria-labelledby="welcome-title"
         tabIndex={-1}
       >
+        <div className="welcome-close-row">
+          <button
+            type="button"
+            className="welcome-close"
+            aria-label="Close"
+            title="Close"
+            onClick={close}
+          >
+            ✕
+          </button>
+        </div>
         {page === 1 ? (
           <>
             <div className="welcome-head">
@@ -209,8 +219,7 @@ export default function Welcome({ open, onClose }: Props) {
           Open data · built with AI assistance ·{' '}
           <a href={README_URL} target="_blank" rel="noreferrer">
             about this project
-          </a>{' '}
-          · questions: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>
+          </a>
         </p>
       </div>
     </div>

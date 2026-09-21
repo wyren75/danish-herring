@@ -776,6 +776,39 @@ body {
   outline: none;
 }
 
+/* The ✕ (13.10): top right of the dialog. The dialog is its own scroll
+   container, so the row is sticky — on a short window the way out stays in
+   view — and zero-height, so it moves nothing below it. */
+.welcome-close-row {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+}
+
+.welcome-close {
+  margin-right: -20px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.welcome-close:hover {
+  color: var(--text);
+}
+
+.welcome-close:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .welcome h1 {
   margin: 0 0 4px;
   font-size: 22px;

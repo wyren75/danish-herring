@@ -992,8 +992,9 @@ keeps title left and tabs right.
 **Behaviour.** A centred modal over a dimmed map, max width 600 px, panel
 colour, 12 px corners, generous padding and line height (1.6). Two pages
 with a small two-dot indicator at the foot. Page 1 has one button, *How to
-find a boat →*. Page 2 has *← Back* and *Start*. `Esc` closes on either
-page. Dismissal is remembered in `localStorage` (wrapped in try/catch) so it
+find a boat →*. Page 2 has *← Back* and *Start*. `Esc` and a `✕` top right
+of the dialog close on either page — the `✕` is sticky, so on a window too
+short for page 1 the way out never scrolls away. Dismissal is remembered in `localStorage` (wrapped in try/catch) so it
 shows once per browser; the book icon — an open-book glyph, 36 px, bottom
 left of the map, tooltip *About Danish Herring* — reopens it at page 1 any
 time. The first-visit hint pill (13.4) appears only after the dialog closes.
@@ -1073,8 +1074,8 @@ on hover only.
 Go and find it!"*)
 
 A line of small muted text at the foot of both pages: *Open data · built
-with AI assistance · [about this project] · questions: mfresque@gmail.com*
-— the first link to the GitHub README, the email as a `mailto:` link.
+with AI assistance · [about this project]* — the one link going to the
+GitHub README.
 
 **Links** in the body (Copernicus Sentinel-1, Global Fishing Watch) are
 always underlined, in the muted colour, brightening on hover — not
