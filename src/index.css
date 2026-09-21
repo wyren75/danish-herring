@@ -295,6 +295,19 @@ body {
   cursor: help;
 }
 
+/* "4 at trawling speed" carries the same kind of native tooltip, wherever it
+   appears: the scene counts and the matched vessel's speed. The help cursor
+   is the only hint on screen that there is something to hover. */
+.trawling {
+  cursor: help;
+}
+
+/* In the verdict panel the speed itself is the finding, so it takes the
+   accent (9.2). */
+.trawling--speed {
+  color: var(--accent);
+}
+
 /* Inspector (13.5): the result, 340 px on the right, slid in from off-screen
    when there is a click and the map narrows to make room. */
 .main {

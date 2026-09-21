@@ -521,10 +521,17 @@ and at least three fishing vessels inside the boundary at the instant.
 Fourteen scenes, 13 August – 8 September 2026. The row format:
 
 ```
-02 Sep 2026  05:31 UTC   6 fishing inside · 4 trawling   ●●●●
-01 Sep 2026  05:40 UTC   5 fishing inside · 4 trawling   ●●●●
-31 Aug 2026  17:01 UTC   7 fishing inside · 0 trawling   ●●●
+02 Sep 2026  05:31 UTC   6 fishing inside · 4 at trawling speed   ●●●●
+01 Sep 2026  05:40 UTC   5 fishing inside · 4 at trawling speed   ●●●●
+31 Aug 2026  17:01 UTC   7 fishing inside · 0 at trawling speed   ●●●
 ```
+
+"*at trawling speed*", not "*trawling*": the count is fishing vessels
+between 2 and 5 knots at the instant, a speed band applied to a
+self-declared vessel type, not an observed gear deployment. The phrase
+carries a native tooltip — *"Fishing vessel moving at 2–5 knots at this
+instant — working speed. A speed band, not a confirmed gear type."* — in
+the manner of the activity dots, not a further (i).
 
 Activity varies day to day, and the first scene the user sees should be a
 busy one. Selecting a scene: rebuild the S1 source, load its snapshots,
@@ -568,12 +575,18 @@ MMSI 219012345 · IMO —  · call OZXY
 
 At 05:32:14 UTC
   position  57.4412 N, 10.5537 E
-  speed     3.1 kn   course 214°
+  speed     3.1 kn (trawling speed)   course 214°   ← orange, see below
   method    interpolated (AIS 41 s before, 18 s after)
 
 Offset from your click: 137 m          ← with (i) tooltip, see 9.4
 Inside Natura 2000 site: yes
 ```
+
+When the matched vessel's `ship_type` is Fishing **and** its `sog` is
+between 2 and 5 knots, the speed is drawn in the accent orange with
+*"(trawling speed)"* appended, carrying the section-8 tooltip. Both
+conditions are required, as in `n_trawling_in_site`: a cargo vessel at
+3 knots is manoeuvring, and highlighting it would contradict the count.
 
 Flag from MMSI: first three digits are the Maritime Identification Digits.
 Ship a tiny lookup for the ones that occur here (219, 220 = Denmark; 265, 266
@@ -825,7 +838,8 @@ this is placement.
 Two rows, full width, fixed.
 
 **Row 1.** Title left. Centre: the **scene stepper** — `◀`, the current
-scene as `02 Sep 2026 · 05:31 UTC · 6 fishing · 4 trawling ●●●●`, `▶`. The
+scene as `02 Sep 2026 · 05:31 UTC · 6 fishing · 4 at trawling speed ●●●●`,
+`▶`. The
 scene text is a button that opens a dropdown listing all scenes in the
 section-8 order, same row format. `←` / `→` keys step. Right: the two tabs.
 

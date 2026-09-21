@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { Scene } from '../lib/data'
 import { utcDate, utcTime } from '../lib/format'
 import SceneDots from './SceneDots'
+import TrawlingCount from './TrawlingCount'
 
 interface Props {
   scenes: Scene[]
@@ -45,7 +46,11 @@ export default function ScenePicker({ scenes, selectedId, onSelect }: Props) {
                   <span className="scene-time">{utcTime(scene.acq_mid)}</span>
                 </span>
                 <span className="scene-counts">
-                  {scene.n_fishing_in_site} fishing inside · {scene.n_trawling_in_site} trawling
+                  {/* One flex child, so the dots stay hard right. */}
+                  <span>
+                    {scene.n_fishing_in_site} fishing inside ·{' '}
+                    <TrawlingCount n={scene.n_trawling_in_site} />
+                  </span>
                   <SceneDots scene={scene} />
                 </span>
               </button>

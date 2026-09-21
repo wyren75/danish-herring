@@ -3,6 +3,7 @@ import type { GfwEvent, Scene, Snapshot, Vessel } from '../lib/data'
 import { duration, kilometres, latLon, metres, utcTime, utcTimeSeconds } from '../lib/format'
 import { midFlag } from '../lib/geo'
 import { AROUND_PASS_H, history, relateEvent } from '../lib/gfw'
+import { atTrawlingSpeed, TRAWLING_TIP } from '../lib/trawling'
 import type { Verdict } from '../lib/verdict'
 import Tip from './Tip'
 
@@ -148,7 +149,17 @@ function Matched({
         <dd>{latLon(s.lat, s.lon)}</dd>
         <dt>speed</dt>
         <dd>
-          {s.sog != null ? `${s.sog.toFixed(1)} kn` : dash}
+          {s.sog == null ? (
+            dash
+          ) : atTrawlingSpeed(v?.ship_type, s.sog) ? (
+            // A fishing vessel in the 2–5 kn band — the same pair of
+            // conditions that `n_trawling_in_site` counts (section 8).
+            <span className="trawling trawling--speed" title={TRAWLING_TIP}>
+              {s.sog.toFixed(1)} kn (trawling speed)
+            </span>
+          ) : (
+            `${s.sog.toFixed(1)} kn`
+          )}
           {'   '}course {s.cog != null ? `${Math.round(s.cog)}°` : dash}
         </dd>
         <dt>method</dt>

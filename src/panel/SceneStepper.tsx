@@ -3,6 +3,7 @@ import type { Scene } from '../lib/data'
 import { utcDate, utcTime } from '../lib/format'
 import ScenePicker, { rankScenes } from './ScenePicker'
 import SceneDots from './SceneDots'
+import TrawlingCount from './TrawlingCount'
 
 interface Props {
   scenes: Scene[]
@@ -86,7 +87,7 @@ export default function SceneStepper({ scenes, selectedId, onSelect }: Props) {
         {scene ? (
           <>
             {utcDate(scene.acq_mid)} · {utcTime(scene.acq_mid)} · {scene.n_fishing_in_site}{' '}
-            fishing · {scene.n_trawling_in_site} trawling{' '}
+            fishing · <TrawlingCount n={scene.n_trawling_in_site} />{' '}
             <SceneDots scene={scene} />
           </>
         ) : (

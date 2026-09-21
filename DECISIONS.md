@@ -637,3 +637,52 @@ summarises. It stays `aria-hidden`, since a screen reader already reads
 those counts aloud; the help cursor is the only hint that there is
 something to hover. The glyph moved to `SceneDots`, used by both the
 stepper and its dropdown, so the formula has one home.
+
+## 2026-09-21 · "at trawling speed", not "trawling" — the interface stops claiming gear
+
+The counts and the verdict panel said *trawling* as though it had been
+observed. It has not been. `n_trawling_in_site` is two conditions: the
+vessel's self-declared AIS `ship_type` is Fishing, and its speed over
+ground at the acquisition instant is between 2 and 5 knots. That is a
+speed band applied to a self-declared type — a good proxy for gear in the
+water, and nothing more. A trawler hauling and a seiner steaming slowly
+into a set look alike from here; so, in the speed alone, does a fishing
+vessel drifting in a current.
+
+Three changes, one point. The stepper and its dropdown now read **"4 at
+trawling speed"** — the phrasing the README already used. The phrase
+carries a native `title`, in the manner of the activity dots and for the
+same reason: *"Fishing vessel moving at 2–5 knots at this instant —
+working speed. A speed band, not a confirmed gear type."* And in the
+matched panel, a fishing vessel in the band has its speed drawn in the
+accent orange with *"(trawling speed)"* appended, carrying the same
+tooltip — so the one vessel the user clicked is legible as part of the
+count at the top of the screen.
+
+The fishing-type condition is required in the panel, not merely tidy: a
+cargo vessel at 3 knots is manoeuvring, and highlighting it would
+contradict `n_trawling_in_site`, which applies both conditions. The band
+and the test now have one home, `lib/trawling.ts`, mirroring `ingest.py`
+so the highlight and the count cannot drift apart.
+
+## 2026-09-21 · AIS navigational status 7 "engaged in fishing" — measured, deferred
+
+AIS carries a self-declared *activity* flag as well as a vessel type:
+navigational status code 7, "engaged in fishing". If it were reliable at
+the instant, it would be a better answer than a speed band. It is not.
+
+Measured on one day of Danish data: **73% of fishing-vessel position
+reports set status 7** — the field is well maintained, not the empty
+column it is in many fleets. But **88% of those declarations are
+broadcast above 5 knots**, because the skipper sets it on leaving harbour
+and clears it on return. It is trip-level intent, not moment-level
+observation: it says *this is a fishing trip*, which, for a fishing
+vessel at sea, is by and large already true. Against the vessel type the
+app already holds, it adds little.
+
+Deferred rather than rejected. Using it would mean re-ingesting every
+scene: `ingest.py` already captures the field into `positions`, so only
+`snapshot()` would need to carry it through to the snapshot rows, but the
+whole table would have to be rebuilt to fill it. If a later change
+re-ingests for another reason, carry it then and show it as what it is —
+a declaration, with its time of setting — not as an observation.
