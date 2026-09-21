@@ -258,6 +258,7 @@ A server returns only when phase 2 needs raw pixels.
 | Charts | **recharts** | Observation tab only |
 | Styling | Plain CSS, one file | No Tailwind, no component library. Dark theme. |
 | Hosting | **Vercel** | Git-push deploy |
+| Analytics | **@vercel/analytics** | `<Analytics />` once in `App.tsx`; cookieless, no custom events |
 
 No state library. No router — two tabs are a `useState`.
 

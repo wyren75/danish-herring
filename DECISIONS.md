@@ -760,3 +760,22 @@ the dialog is its own scroll container (`max-height: 100%`,
 sight on a short window — exactly the case where a visitor most wants out.
 Sticky keeps it pinned and zero height keeps it from moving the heading
 below it.
+
+## 2026-09-21 · Vercel Web Analytics
+
+The link is live and shared; nothing said whether anyone opened it. Added
+`@vercel/analytics` — one dependency, approved by the owner — rendered as
+`<Analytics />` once in `App.tsx`. No custom events, no identification of
+visitors, no cookies.
+
+Vercel's own product rather than Google Analytics for two reasons. It is
+served first-party from the same domain, so corporate proxies and ad
+blockers do not block it, and the numbers are therefore worth reading. And
+it stores no personally identifiable information, which keeps the app in
+the position it has held since M0: the browser reads open data and tells
+nobody who is looking.
+
+The useful signal is the **referrer** — which link someone followed to get
+here — not a count of people. No visitor is identified. Being cookieless
+and holding no personal data, it needs no consent banner, and none was
+added.
