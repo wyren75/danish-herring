@@ -13,15 +13,15 @@ interface Props {
   onShowS2: (on: boolean) => void
   showAis: boolean
   onShowAis: (on: boolean) => void
-  onReveal: () => void
   showGfw: boolean
   onShowGfw: (on: boolean) => void
 }
 
-// Layer toggles (SPEC.md section 7 table). AIS is off by default and
-// "Reveal all" is deliberately discreet (open question 19.3): the user should
-// try a blind click first. GFW is context, also off. Lives in the floating
-// Layers card on the map (13.4), which carries the heading.
+// Layer toggles (SPEC.md section 7 table). Radar and optical are mutually
+// exclusive — one imagery layer at a time; App owns that rule. AIS is off by
+// default: the user should try a blind click first. GFW is context, also off.
+// Lives in the floating Layers card on the map (13.4), which carries the
+// heading.
 export default function Layers({
   showRadar,
   onShowRadar,
@@ -31,7 +31,6 @@ export default function Layers({
   onShowS2,
   showAis,
   onShowAis,
-  onReveal,
   showGfw,
   onShowGfw,
 }: Props) {
@@ -43,7 +42,7 @@ export default function Layers({
           checked={showRadar}
           onChange={(e) => onShowRadar(e.target.checked)}
         />
-        Radar S1
+        Radar Sentinel-1
       </label>
       <div className="layer-row has-tip">
         <label className="layer-toggle" title={s2.pass ? undefined : s2Reason(s2)}>
@@ -53,18 +52,15 @@ export default function Layers({
             disabled={!s2.pass}
             onChange={(e) => onShowS2(e.target.checked)}
           />
-          Optical S2
+          Optical Sentinel-2
         </label>
         {!s2.pass && <Tip text={s2Reason(s2)} />}
       </div>
       {s2.pass && scene && <p className="layer-note">{s2PassLabel(s2.pass, scene)}</p>}
       <label className="layer-toggle">
         <input type="checkbox" checked={showAis} onChange={(e) => onShowAis(e.target.checked)} />
-        AIS vessels
+        AIS fishing vessels
       </label>
-      <button type="button" className="reveal" onClick={onReveal} disabled={showAis}>
-        Reveal all
-      </button>
       <label className="layer-toggle">
         <input type="checkbox" checked={showGfw} onChange={(e) => onShowGfw(e.target.checked)} />
         GFW fishing events

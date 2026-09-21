@@ -498,34 +498,6 @@ body {
   color: var(--muted);
 }
 
-/* "Reveal all" (7.3): a real button, but a quiet one. */
-.reveal {
-  margin: 6px 0 0;
-  padding: 4px 12px;
-  border: 1px solid var(--muted);
-  border-radius: 3px;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.reveal:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.reveal:focus-visible {
-  outline: 1px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.reveal:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 /* (i) tooltip (9.4 and 10.1). Shown on hover or keyboard focus. */
 /* The tooltip is positioned against the line that holds the (i), so it can
    span the panel's width instead of clipping at its edge. */
@@ -580,6 +552,14 @@ body {
 .tip:hover .tip-text,
 .tip-btn:focus-visible + .tip-text {
   display: block;
+}
+
+/* Inside the Layers card there is no room above either: the card sits at
+   the top of the map, so an upward tooltip would run under the top bar. It
+   opens downward from its row instead, over the map. */
+.layers .tip-text {
+  top: calc(100% + 4px);
+  bottom: auto;
 }
 
 /* On the top bar there is no room above: the tooltip opens downward from

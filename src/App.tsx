@@ -46,6 +46,10 @@ interface Data {
 // Two tabs are a useState (section 4).
 type Tab = 'map' | 'observation'
 
+// The imagery layers (2 and 3) are one choice, not two toggles: radar,
+// optical, or neither. They can never stack.
+type Imagery = 'radar' | 'optical' | null
+
 const NO_S2: S2Pick = { pass: null, best: null }
 
 export default function App() {
@@ -53,11 +57,9 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('map')
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  // Layer 3 is on by default (section 7 table).
-  const [showRadar, setShowRadar] = useState(true)
-  // Layer 2 is off by default and only offered when a clear Sentinel-2 pass
-  // exists within a day of the scene (section 7).
-  const [showS2, setShowS2] = useState(false)
+  // Radar is the layer the app opens on (section 7 table); optical is only
+  // offered when a clear Sentinel-2 pass exists within a day of the scene.
+  const [imagery, setImagery] = useState<Imagery>('radar')
   // Layer 6 is off by default — the user looks at the radar first (7.3).
   const [showAis, setShowAis] = useState(false)
   // Layer 5 is context, not the subject — also off (7.4).
@@ -112,6 +114,12 @@ export default function App() {
   // The Sentinel-2 pass the scene may show, if a clear one is within a day.
   const s2 = useMemo(() => (data && scene ? clearS2Pass(data.passes, scene) : NO_S2), [data, scene])
 
+  // What the map draws: optical only where the scene offers a clear pass, and
+  // radar standing in for it where it does not, so choosing optical and then
+  // stepping to a cloudy scene never leaves the map bare.
+  const showS2 = imagery === 'optical' && !!s2.pass
+  const showRadar = imagery === 'radar' || (imagery === 'optical' && !s2.pass)
+
   // Selecting a scene clears any click state (section 8), which also closes
   // the inspector (13.5).
   const selectScene = useCallback((id: string) => {
@@ -153,10 +161,15 @@ export default function App() {
     [data, sceneSnapshots, verdict],
   )
 
-  // "Reveal all" is the toggle plus an animation (7.3).
-  const reveal = useCallback(() => {
-    setShowAis(true)
-    setRevealKey((k) => k + 1)
+  // Ticking one imagery layer unticks the other; unticking leaves neither.
+  const toggleRadar = useCallback((on: boolean) => setImagery(on ? 'radar' : null), [])
+  const toggleS2 = useCallback((on: boolean) => setImagery(on ? 'optical' : null), [])
+
+  // Showing AIS is still the reveal moment (7.3): each time the layer comes
+  // on, the markers sweep in rather than appearing all at once.
+  const toggleAis = useCallback((on: boolean) => {
+    setShowAis(on)
+    if (on) setRevealKey((k) => k + 1)
   }, [])
 
   const tabs = (
@@ -218,14 +231,13 @@ export default function App() {
             controls={[
               layersControl({
                 showRadar,
-                onShowRadar: setShowRadar,
+                onShowRadar: toggleRadar,
                 scene,
                 s2,
                 showS2,
-                onShowS2: setShowS2,
+                onShowS2: toggleS2,
                 showAis,
-                onShowAis: setShowAis,
-                onReveal: reveal,
+                onShowAis: toggleAis,
                 showGfw,
                 onShowGfw: setShowGfw,
               }),

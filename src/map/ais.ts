@@ -26,7 +26,7 @@ export type AisFeatures = FeatureCollection<Point, AisProps>
 
 export const EMPTY_AIS: AisFeatures = { type: 'FeatureCollection', features: [] }
 
-// One feature per snapshot of the scene. The sweep order for "Reveal all"
+// One feature per snapshot of the scene. The sweep order when AIS is shown
 // runs outward from the click when there is one, else west to east.
 export function aisFeatures(
   snapshots: Snapshot[],

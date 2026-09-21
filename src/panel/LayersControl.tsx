@@ -14,8 +14,7 @@ const layersGlyph = (
 )
 
 // The Layers control (13.8): the stacked-squares "layers" glyph; expanded,
-// the Layers section as it was — toggles and Reveal all, nothing more. The
-// legend is its own control (13.9).
+// the layer toggles, nothing more. The legend is its own control (13.9).
 export const layersControl = (props: ComponentProps<typeof Layers>): Control => ({
   name: 'Layers',
   storageKey: 'layers-open',

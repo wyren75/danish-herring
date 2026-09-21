@@ -45,7 +45,8 @@ interface Props {
   gfw: GfwFeatures
   ais: AisFeatures
   showAis: boolean
-  // Bumped by "Reveal all": the markers sweep in instead of just appearing.
+  // Bumped when AIS is switched on: the markers sweep in instead of just
+  // appearing (7.3).
   revealKey: number
   verdict: Verdict | null
   onClick: (lonLat: LonLat) => void
@@ -72,7 +73,7 @@ function clickFeatures(verdict: Verdict | null): FeatureCollection {
 
 // Layer 6 visibility is a paint opacity rather than layout visibility, so the
 // matched vessel can stay on screen while the rest are hidden (7.3), and so
-// "Reveal all" can fade the markers in one after another. `t` is the sweep
+// The reveal fades the markers in one after another. `t` is the sweep
 // time in ms; Infinity shows everything, null hides all but the match.
 const REVEAL_MS = 700
 const FADE_MS = 200
@@ -475,7 +476,7 @@ export default function Map({
     source?.setData(gfw)
   }, [ready, gfw])
 
-  // Show / hide, and the "Reveal all" sweep. Each new revealKey runs the
+  // Show / hide, and the reveal sweep. Each new revealKey runs the
   // opacity expression forward over REVEAL_MS; a plain toggle jumps to the end.
   const revealedKey = useRef(0)
   useEffect(() => {

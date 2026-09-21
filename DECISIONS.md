@@ -567,3 +567,46 @@ split that component, it takes the slider as `children` and places it
 at that point in both branches. `Verdict`, `Radius`, `Layers`,
 `SceneCounts` and `ScenePicker` otherwise keep their logic and markup;
 only their headings moved to the containers that now carry them.
+
+## 2026-09-21 · M11d · The layer names spell the sensors out
+
+Owner feedback. "Radar S1" and "Optical S2" abbreviate satellites the
+reader has not met; a demo has no glossary. The rows read **Radar
+Sentinel-1**, **Optical Sentinel-2** and **AIS fishing vessels** — the
+last names the fleet rather than the feed, which is what the click is
+about. SPEC.md 7 and 13.8 updated; recorded as 13.13.
+
+## 2026-09-21 · M11d · Inside the Layers card the (i) note opens downward
+
+The tooltip of 9.4 opens upward from its row, which works in the verdict
+panel and fails in the Layers card: the card sits at the top of the map, so
+the Optical row's note ran under the top bar — a separate stacking context
+at `z-index: 3`, so raising the tooltip could not win. `.layers .tip-text`
+opens downward over the map instead, the same reversal `.topbar .tip-text`
+already makes. No change to `Tip`, which stays one component.
+
+## 2026-09-21 · M11d · One imagery layer at a time, held as one state
+
+Supersedes the section 7 table's two independent toggles. Radar and optical
+stacked is not a view: the upper hides the lower and a bright dot can no
+longer be attributed to a sensor. Rather than two booleans kept in step by
+each other's handler, `App` holds one `Imagery = 'radar' | 'optical' | null`
+and derives `showRadar` / `showS2` from it — the invariant cannot be broken
+by a future third setter, and no effect is needed to repair state.
+
+The derivation also covers the case exclusivity created: with optical
+chosen, a scene offering no clear S2 pass would have left the map bare.
+`showRadar` is true when the choice is optical and the pass is missing, so
+radar stands in, the Radar row shows ticked, and the ticks always say what
+is drawn.
+
+## 2026-09-21 · M11d · "Reveal all" removed; the sweep moves onto the toggle
+
+Retires open question 19.3 and supersedes the M5 entry above. The button
+and the toggle set the same state; the button sat directly beneath the
+toggle and was disabled whenever it was on, so it asked the user to notice
+the same control twice. The 0.7 s sweep was the only thing the button had
+that the toggle lacked, so the toggle now runs it: each time AIS is
+switched on, `revealKey` is bumped and the markers fade in one after
+another. Blind-click-first is unaffected — the layer is still off by
+default.

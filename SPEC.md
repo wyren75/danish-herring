@@ -412,12 +412,15 @@ Layer order, bottom to top:
 | # | Layer | Source | Default | Toggle? |
 |---|---|---|---|---|
 | 1 | Basemap | raster tiles | on | no |
-| 2 | Sentinel-2 true colour | Sentinel Hub WMS | **off** | yes, only enabled if a clear S2 pass exists within ±1 day of the scene |
-| 3 | Sentinel-1 radar | Sentinel Hub WMS | **on** | yes |
+| 2 | Sentinel-2 true colour | Sentinel Hub WMS | **off** | yes, only enabled if a clear S2 pass exists within ±1 day of the scene; exclusive with layer 3 (13.13) |
+| 3 | Sentinel-1 radar | Sentinel Hub WMS | **on** | yes; exclusive with layer 2 (13.13) |
 | 4 | Site boundary | `site.geojson` | on | no |
 | 5 | GFW fishing events | Supabase | off | yes |
 | 6 | AIS snapshots | Supabase | **off** | yes |
 | 7 | Click marker + match line | client state | — | — |
+
+Layers 2 and 3 are **mutually exclusive** (21 Sept, 13.13): one imagery
+layer is drawn at a time, or neither.
 
 ### 7.1 Pinning the radar image to the scene — the critical detail
 
@@ -484,9 +487,10 @@ Non-fishing colour is light blue `#4fb3ff` (changed from grey at M5b — grey
 vanished over bright harbour clutter).
 
 Hidden by default — **this is the point of the app.** The user should look at
-the radar first and click blind. Two controls in the panel: *Show AIS* toggle
-and a *Reveal all* button (same thing, with a small animation of markers
-appearing). Clicking a marker directly is a shortcut to the matched panel.
+the radar first and click blind. One control in the panel: the *AIS fishing
+vessels* toggle, which fades the markers in one after another each time it is
+switched on. (The separate *Reveal all* button was removed 21 Sept — 13.13.)
+Clicking a marker directly is a shortcut to the matched panel.
 
 ### 7.4 GFW fishing events (layer 5)
 
@@ -760,7 +764,7 @@ Each milestone is one session. **Done when** is the acceptance test.
 | **M2** | Scene picker from `scenes` + `snapshots` + `vessels`, sorted by fishing count. Selecting a scene loads its snapshots into state. | Clicking a scene logs its snapshot count; list is sorted with the busiest first. |
 | **M3** | Sentinel-1 WMS layer pinned to the selected scene (section 7.1). Toggle. | Changing scene changes the radar image; bright dots visible on black water; the URL in the network tab contains the two-minute `TIME` window. |
 | **M4** | Click → nearest snapshot → matched / unmatched panels (section 9). Radius slider. Match line. In-site flag. | Clicking a bright dot inside the boundary yields a plausible vessel; clicking open water yields unmatched with nearest-vessel distance; moving the slider flips a borderline case. |
-| **M5** | AIS layer (hidden by default), Show AIS toggle, Reveal all, marker click shortcut. Flag lookup. Offset tooltip. | With AIS hidden, a blind click on a bright dot matches; Reveal shows the marker under it. |
+| **M5** | AIS layer (hidden by default), Show AIS toggle, Reveal all, marker click shortcut. Flag lookup. Offset tooltip. (*Reveal all* removed 21 Sept — 13.13.) | With AIS hidden, a blind click on a bright dot matches; Reveal shows the marker under it. |
 | **M6** | GFW fishing events layer and the confidence ratio (section 10 as originally written). | Built 16 Sept; ratio then superseded. |
 | **M6b** | Section 10 as rewritten: two-count line per scene (10.1), per-vessel GFW context and history (10.2), event bounding-box rectangles and matched-vessel events always drawn (10.3). Reword the 9.3 block. | Matching a vessel on the 31 Aug scene shows a "GFW recorded this vessel fishing …" line and a dashed rectangle appears on the map; the scene line reads two counts with no percentage. |
 | **M7** | Optional Sentinel-2 layer, enabled only when a clear pass exists near the scene date. | For a May/June scene the S2 toggle is active and shows a photo; for a February scene it is disabled with a tooltip saying why. |
@@ -841,10 +845,11 @@ centre and zoom. Zoom limits 9–14 stay. Zoom control top-right as now.
 
 **Layers card** floats top-right, directly under the zoom control, 220 px
 wide, dark panel colour at 92% opacity. Collapsed it shows only `Layers ▾`.
-Expanded: Radar S1, Optical S2 (with its date/cloud note or disabled
-reason), AIS vessels, GFW fishing events, the *Reveal all* button, and the
-collapsible *Symbols* legend. Everything that was in the old Layers section,
-nothing more. Collapsed by default; remembers its state for the session.
+Expanded: Radar Sentinel-1, Optical Sentinel-2 (with its date/cloud note or
+disabled reason), AIS fishing vessels and GFW fishing events (names revised
+21 Sept, 13.13), and the collapsible *Symbols* legend. Everything that was in
+the old Layers section, nothing more. Collapsed by default; remembers its
+state for the session.
 
 **First-visit hint**: a single line centred on the map, in a rounded dark
 pill — *"Pick a scene above, then click a bright dot inside the orange
@@ -1090,6 +1095,43 @@ remembered for the session as before.
 welcome's page 2 carries the same instruction. Nothing appears on the map
 after *Start*.
 
+### 13.13 M11d — the layer menu: full names, one imagery layer (21 Sept)
+
+| M | Build | Done when |
+|---|---|---|
+| **M11d** | Sensor names written out; the Optical (i) note opens downward; *Reveal all* removed; radar and optical mutually exclusive. | Ticking Optical Sentinel-2 unticks Radar Sentinel-1 and vice versa; the (i) note beside a disabled Optical row reads in full, not clipped by the top bar; no *Reveal all* button remains. |
+
+Four notes from the owner after using the map.
+
+**Names.** "Radar S1" and "Optical S2" name satellites the reader has not
+met. The rows are now **Radar Sentinel-1**, **Optical Sentinel-2** and
+**AIS fishing vessels** — the last says what the fleet is, which is the
+subject of the app.
+
+**The (i) note opens downward inside the card.** The tooltip of 9.4 opens
+upward from its row. The Layers card sits at the top of the map, so the
+Optical row's note ran under the top bar, which has its own stacking
+context, and its first line was lost. Inside the card it opens downward
+instead, over the map — the same reversal the top bar's own tooltip
+already makes (13.3).
+
+**One imagery layer at a time.** Layers 2 and 3 are no longer two
+independent toggles but one choice: radar, optical, or neither. Ticking
+either unticks the other. Stacking them was never useful — the upper one
+simply hides the lower, and the bright dots can no longer be attributed to
+a sensor.
+
+Hold it as that one choice, not as two booleans kept in step. Where the
+selected scene offers no clear Sentinel-2 pass, optical falls back to radar
+rather than leaving the map bare: stepping from a clear scene to a cloudy
+one with Optical ticked draws radar and ticks Radar Sentinel-1.
+
+***Reveal all* removed.** Retires open question 19.3. The button and the
+toggle set the same state, and the button sat directly under the toggle,
+disabled whenever it was on. The sweep animation survives on the toggle:
+the markers fade in one after another each time the AIS layer is switched
+on, which is where the reveal belonged.
+
 ---
 
 ## 14. Non-functional requirements
@@ -1210,8 +1252,10 @@ sonar/
    trawling speed) mentioned on the Observation tab as an anecdote, or kept
    for the README only?
 2. The app name: keep **Sonar**, or something referencing the site?
-3. Should the **Reveal all** button be prominent (a real button) or
-   discreet (a link)? The demo is stronger if the user tries blind first.
+3. ~~Should the **Reveal all** button be prominent (a real button) or
+   discreet (a link)?~~ **Answered 21 Sept: neither — the button is gone**
+   (13.13). The *AIS fishing vessels* toggle does the same work, and the
+   demo still asks the user to try blind first.
 
 ---
 
